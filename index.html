@@ -1,0 +1,2573 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-trae-theme="light"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>随机谜题游戏：猫藏在哪儿？</title>
+  <style>
+    :root {
+      --bg: #f7efe4;
+      --panel: #fffaf2;
+      --ink: #2d241e;
+      --muted: #7c6b5d;
+      --line: #dcc9b5;
+      --accent: #c96f3a;
+      --accent-2: #496f5d;
+      --warn: #b84444;
+      --ok: #3f7a50;
+      --floor: #f2dfc7;
+      --kitchen: rgba(255, 185, 91, .26);
+      --shadow: 0 18px 50px rgba(72, 45, 21, .13);
+      --radius: 20px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(201, 111, 58, .16), transparent 34rem),
+        linear-gradient(135deg, #fff7ed 0%, var(--bg) 55%, #efe2d0 100%);
+      min-height: 100vh;
+    }
+
+    .app {
+      width: min(1280px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 28px 0 42px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 46px);
+      letter-spacing: -.04em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 850px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    select, button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fffaf4;
+      color: var(--ink);
+      padding: 10px 14px;
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+      user-select: none;
+    }
+
+    button:hover { transform: translateY(-1px); border-color: #c8aa8b; }
+    button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    button.secondary { background: #fbefe2; }
+    button.danger { background: #fff2f0; color: var(--warn); border-color: #e4b6b0; }
+    button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(480px, 1.05fr) minmax(360px, .95fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      background: rgba(255, 250, 242, .88);
+      border: 1px solid rgba(220, 201, 181, .86);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .board-card { padding: 18px; }
+
+    .statusbar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      background: #fff6eb;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 11px 12px;
+      min-height: 66px;
+    }
+
+    .stat small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    .board-wrap {
+      position: relative;
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      grid-template-rows: 30px 1fr;
+      gap: 8px;
+    }
+
+    .corner { grid-area: 1 / 1; }
+    .cols, .rows { color: var(--muted); font-size: 13px; font-weight: 700; }
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-area: 1 / 2;
+      text-align: center;
+      align-items: center;
+    }
+    .rows {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      grid-area: 2 / 1;
+      text-align: center;
+      align-items: center;
+    }
+
+    .board {
+      grid-area: 2 / 2;
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(58px, 1fr));
+      grid-template-rows: repeat(6, minmax(58px, 1fr));
+      gap: 7px;
+      aspect-ratio: 1;
+    }
+
+    .cell {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 2px;
+      min-width: 0;
+      border: 1px solid #d7bfa8;
+      border-radius: 16px;
+      padding: 7px;
+      background: var(--floor);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+
+    .cell:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(87, 54, 25, .14);
+      border-color: #b88960;
+      z-index: 2;
+    }
+
+    .cell.kitchen { border-color: #f0c36d; box-shadow: inset 0 0 0 3px rgba(240, 195, 109, .72); }
+    .cell.obj-chair { background: #f7d7b7; }
+    .cell.obj-table { background: #d7c3ff; }
+    .cell.obj-bed { background: #c7defb; }
+    .cell.obj-rug { background: #e9c1d8; }
+    .cell.obj-window { background: #bfe8ee; }
+    .cell.obj-heater { background: #ffd0bd; }
+    .cell.obj-fridge { background: #ccecf9; }
+    .cell.obj-cabinet { background: #d6c2a4; }
+    .cell.obj-sofa { background: #c9e6c9; }
+    .cell.obj-bookshelf { background: #f1d99d; }
+    .cell.obj-shoerack { background: #d5d5d5; }
+    .cell.active-cell { outline: 3px solid rgba(201, 111, 58, .45); }
+    .cell.no-cat { box-shadow: inset 0 0 0 3px rgba(184, 68, 68, .16); }
+
+    .coord {
+      color: rgba(45, 36, 30, .45);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .object {
+      font-size: clamp(15px, 2vw, 22px);
+      font-weight: 750;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.15;
+    }
+
+    .floor-label { color: rgba(45, 36, 30, .34); font-size: 12px; }
+
+    .member {
+      align-self: flex-start;
+      display: inline-flex;
+      max-width: 100%;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(73, 111, 93, .13);
+      color: #2f5945;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .marks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      min-height: 18px;
+    }
+
+    .mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: #2d241e;
+      color: white;
+      font-size: 11px;
+      line-height: 1;
+      padding: 4px 6px;
+      max-width: 100%;
+    }
+
+    .mark.empty { background: var(--warn); }
+
+    .side {
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      padding: 16px;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 20px;
+      letter-spacing: -.02em;
+    }
+
+    .cat-picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+      gap: 8px;
+    }
+
+    .cat-btn {
+      border-radius: 14px;
+      padding: 10px 9px;
+      background: #fff7ed;
+      border: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .cat-btn.active {
+      background: var(--accent-2);
+      color: white;
+      border-color: var(--accent-2);
+    }
+
+    .cat-btn.found {
+      background: #eef8ef;
+      color: var(--ok);
+      border-color: #b9d7bf;
+    }
+
+    .cat-btn small {
+      display: block;
+      opacity: .75;
+      margin-top: 2px;
+    }
+
+    .hint-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+      max-height: 390px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .hint-list li {
+      border: 1px solid var(--line);
+      background: #fff7ed;
+      border-radius: 14px;
+      padding: 10px 11px;
+      line-height: 1.55;
+    }
+
+    .hint-list .tag {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 6px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(201, 111, 58, .13);
+      color: #9f532d;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .rules {
+      color: var(--muted);
+      line-height: 1.7;
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .rules li { margin: 7px 0; }
+
+    .message {
+      min-height: 48px;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: #fff7ed;
+      border: 1px solid var(--line);
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .message.win {
+      color: var(--ok);
+      border-color: #b9d7bf;
+      background: #f0faf2;
+      font-weight: 700;
+    }
+
+    .message.fail {
+      color: var(--warn);
+      border-color: #e5b8b2;
+      background: #fff4f1;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: var(--floor);
+    }
+
+    .swatch.kitchen { background: #fff3cd; border-color: #f0c36d; }
+    .swatch.no { background: rgba(184, 68, 68, .16); }
+    .swatch.member { background: rgba(73, 111, 93, .13); }
+
+    .cell-picker {
+      display: none;
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: #fff7ed;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+    .cell-picker-title { font-weight: 800; margin-bottom: 10px; color: var(--ink); }
+    .cell-picker-options { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .picker-btn {
+      padding: 8px 13px;
+      border-radius: 999px;
+      font-size: 14px;
+      background: #fffaf4;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      cursor: pointer;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .picker-btn:hover { transform: translateY(-1px); border-color: #c8aa8b; }
+    .picker-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .cat-btn .clue {
+      display: block;
+      opacity: .85;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .infer-panel { display: grid; gap: 12px; }
+    .infer-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #f0f7ff;
+      border: 1px solid #bcd8f5;
+      font-size: 14px;
+      color: #1d4e89;
+    }
+    .infer-summary .big {
+      font-size: 22px;
+      font-weight: 850;
+      color: #1d4e89;
+    }
+    .infer-toggle {
+      margin-left: auto;
+      padding: 5px 12px;
+      font-size: 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #bcd8f5;
+      cursor: pointer;
+      color: #1d4e89;
+    }
+    .infer-steps {
+      display: none;
+      max-height: 340px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .infer-steps.show { display: grid; gap: 7px; }
+    .infer-step {
+      padding: 8px 11px;
+      border-radius: 12px;
+      background: #fff7ed;
+      border: 1px solid var(--line);
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    .infer-step .step-cat {
+      font-weight: 800;
+      color: var(--ink);
+      margin-right: 4px;
+    }
+    .infer-step .step-tag {
+      display: inline-block;
+      margin-right: 5px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: rgba(29, 78, 137, .1);
+      color: #1d4e89;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .cat-btn.hint-active {
+      outline: 3px solid #bcd8f5;
+    }
+    .cell.possible-cell {
+      box-shadow: inset 0 0 0 3px rgba(29, 78, 137, .3);
+    }
+    .cell.possible-preferred {
+      box-shadow: inset 0 0 0 3px rgba(29, 78, 137, .6);
+      background: #e8f1ff;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 11px 13px;
+      background: #fff7ed;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    summary {
+      cursor: pointer;
+      color: var(--ink);
+      font-weight: 800;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 20px;
+      background: rgba(45, 36, 30, .28);
+      z-index: 20;
+    }
+
+    .modal.show { display: grid; }
+
+    .modal-card {
+      width: min(560px, 100%);
+      background: var(--panel);
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 80px rgba(45, 36, 30, .24);
+      padding: 20px;
+    }
+
+    .answer-grid {
+      display: grid;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .answer-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: #fff7ed;
+      border: 1px solid var(--line);
+    }
+
+    @media (max-width: 980px) {
+      header, .layout { grid-template-columns: 1fr; }
+      .toolbar { justify-content: flex-start; }
+      .statusbar { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 560px) {
+      .app { width: min(100vw - 16px, 1280px); padding-top: 16px; }
+      .board-card, .panel { padding: 12px; }
+      .board {
+        gap: 4px;
+        grid-template-columns: repeat(6, minmax(42px, 1fr));
+        grid-template-rows: repeat(6, minmax(42px, 1fr));
+      }
+      .cell { border-radius: 11px; padding: 5px; }
+      .object { font-size: 14px; }
+      .member, .floor-label, .coord { font-size: 10px; }
+      .statusbar { grid-template-columns: 1fr; }
+    }
+  </style>
+<script>document.documentElement.setAttribute('data-trae-theme', "light");window.__TRAE_DISABLE_LEGACY_ADD_TO_CHAT__=true;</script><style data-trae-edit-ui="true" id="trae-previewer-tools-styles">:root,
+[data-trae-theme='dark'] {
+  --trae-bg-base-default: #171717;
+  --trae-bg-menu: #222427;
+  --trae-bg-overlay-l1: rgba(255, 255, 255, 0.04);
+  --trae-bg-overlay-l2: rgba(255, 255, 255, 0.08);
+  --trae-bg-overlay-l3: rgba(255, 255, 255, 0.12);
+  --trae-bg-overlay-l4: rgba(255, 255, 255, 0.16);
+  --trae-bg-invert: #f5f9fe;
+  --trae-bg-invert-hover: #e8ecf0;
+  --trae-bg-invert-active: #dce0e4;
+  --trae-bg-invert-disabled: rgba(224, 226, 242, 0.12);
+  --trae-border-l1: #e0e2f217;
+  --trae-border-l2: rgba(255, 255, 255, 0.12);
+  --trae-border-l3: rgba(255, 255, 255, 0.08);
+  --trae-border-neutral-l3: rgba(229, 229, 229, 0.20);
+  --trae-border-brand: #6a6fff;
+  --trae-text-default: #f5f9fe;
+  --trae-text-default-hover: #f5f9fe;
+  --trae-text-default-active: #f5f9fe;
+  --trae-text-secondary: rgba(245, 249, 254, 0.5);
+  --trae-text-tertiary: rgba(245, 249, 254, 0.4);
+  --trae-text-disabled: #666b75;
+  --trae-text-onaccent: #222427;
+  --trae-icon-default: #f5f9fe;
+  --trae-icon-secondary: rgba(245, 249, 254, 0.5);
+  --trae-icon-brand: #6a6fff;
+  --trae-icon-onaccent: #222427;
+  --trae-status-success: #22c55e;
+  --trae-status-primary: #3b82f6;
+  --trae-status-primary-default: #387bff;
+  --trae-status-primary-surface-l1: rgba(53, 121, 255, 0.18);
+  --trae-status-success-default: #33c192;
+  --trae-status-success-surface-l1: rgba(0, 165, 110, 0.18);
+  --trae-status-error-default: #f65a5a;
+  --trae-status-error-surface-l1: rgba(246, 70, 70, 0.18);
+  --trae-annotation-marker-bg: #4b3fe3;
+  --trae-annotation-marker-text: #ffffff;
+  --trae-annotation-region-border: var(--trae-status-primary-default);
+  --trae-annotation-rect-border: var(--trae-status-error-default);
+  --trae-annotation-arrow-anchor-bg: var(--trae-status-primary-default);
+  --trae-panel-shadow: 0px 6px 24px -1px rgba(0, 0, 0, 0.16);
+  --trae-floating-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.2);
+  --trae-shadow-elevation-50: 0 1px 2px -1px rgba(0, 0, 0, 0.45);
+  --trae-tab-active-shadow: 0px 1px 2px -1px rgba(0, 0, 0, 0.16);
+}
+
+[data-trae-theme='light'] {
+  --trae-bg-base-default: #fafafa;
+  --trae-bg-menu: #ffffff;
+  --trae-bg-overlay-l1: rgba(0, 0, 0, 0.04);
+  --trae-bg-overlay-l2: rgba(0, 0, 0, 0.06);
+  --trae-bg-overlay-l3: rgba(0, 0, 0, 0.08);
+  --trae-bg-overlay-l4: rgba(0, 0, 0, 0.12);
+  --trae-bg-invert: #1f2328;
+  --trae-bg-invert-hover: #32383f;
+  --trae-bg-invert-active: #444d56;
+  --trae-bg-invert-disabled: rgba(115, 115, 115, 0.20);
+  --trae-border-l1: rgba(0, 0, 0, 0.1);
+  --trae-border-l2: rgba(0, 0, 0, 0.12);
+  --trae-border-l3: rgba(0, 0, 0, 0.08);
+  --trae-border-neutral-l3: rgba(115, 115, 115, 0.36);
+  --trae-border-brand: #4b3fe3;
+  --trae-text-default: #1f2328;
+  --trae-text-default-hover: #111214;
+  --trae-text-default-active: #111214;
+  --trae-text-secondary: rgba(31, 35, 40, 0.5);
+  --trae-text-tertiary: rgba(31, 35, 40, 0.4);
+  --trae-text-disabled: #a1a1a1;
+  --trae-text-onaccent: #ffffff;
+  --trae-icon-default: #1f2328;
+  --trae-icon-secondary: rgba(31, 35, 40, 0.5);
+  --trae-icon-brand: #4b3fe3;
+  --trae-icon-onaccent: #ffffff;
+  --trae-status-success: #22c55e;
+  --trae-status-primary: #3b82f6;
+  --trae-status-primary-default: #2f74ff;
+  --trae-status-primary-surface-l1: rgba(47, 116, 255, 0.12);
+  --trae-status-success-default: #15a877;
+  --trae-status-success-surface-l1: rgba(64, 176, 139, 0.12);
+  --trae-status-error-default: #e8463a;
+  --trae-status-error-surface-l1: rgba(232, 70, 58, 0.12);
+  --trae-annotation-marker-bg: #4b3fe3;
+  --trae-annotation-marker-text: #ffffff;
+  --trae-annotation-region-border: var(--trae-status-primary-default);
+  --trae-annotation-rect-border: var(--trae-status-error-default);
+  --trae-annotation-arrow-anchor-bg: var(--trae-status-primary-default);
+  --trae-panel-shadow: 0px 6px 24px -1px rgba(24, 24, 24, 0.06);
+  --trae-floating-shadow: 0px 2px 8px 0px rgba(24, 24, 24, 0.2);
+  --trae-shadow-elevation-50: 0 1px 2px -1px rgba(24, 24, 24, 0.08);
+  --trae-tab-active-shadow: 0px 1px 2px -1px rgba(24, 24, 24, 0.08);
+}
+
+@keyframes trae-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.trae-edit-mode-active body *:not([data-trae-edit-ui]):not([data-trae-edit-ui] *) {
+  transition: none !important;
+  animation-play-state: paused !important;
+}
+
+.trae-browser-inspect-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- 独立注入 CSS，无法访问 :root 变量 */
+  z-index: 1400; /* z-layer: fullscreen (1400) */
+  pointer-events: auto;
+  background: transparent;
+}
+
+.trae-browser-inspect-highlight-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- 独立注入 CSS，无法访问 :root 变量 */
+  z-index: 1401; /* above overlay */
+  display: none;
+}
+
+.trae-browser-inspect-highlight-tag {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  height: 18px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  background-color: var(--trae-status-success-default);
+  color: var(--trae-text-onaccent);
+  font-size: 12px;
+  font-weight: 400;
+  display: none;
+  align-items: center;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- 独立注入 CSS，无法访问 :root 变量 */
+  z-index: 1402; /* above highlight-box */
+}
+
+.trae-browser-inspect-highlight-box-show {
+  display: flex;
+}
+
+.trae-browser-inspect-highlight-tag.trae-browser-inspect-highlight-box-show {
+  display: none;
+}
+
+.trae-browser-inspect-select-button.trae-browser-inspect-highlight-box-show {
+  display: block !important;
+}
+
+.trae-browser-inspect-select-button {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- 独立注入 CSS，无法访问 :root 变量 */
+  z-index: 1402; /* above overlay, must receive pointer events */
+}
+
+.trae-browser-inspect-select-highlight-box {
+  background: transparent !important;
+}
+
+.trae-browser-inspect-select-highlight-box .trae-browser-inspect-highlight-tag {
+  background-color: var(--trae-status-success-default);
+}
+
+.trae-add-to-chat-card {
+  display: block;
+  overflow: hidden;
+  background: var(--trae-bg-menu);
+  border: 1px solid var(--trae-border-l1);
+  border-radius: 8px;
+  box-shadow: var(--trae-floating-shadow);
+  transition:
+    width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trae-add-to-chat-content {
+  position: relative;
+  width: max-content;
+}
+
+.trae-fade-exit {
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+.trae-fade-enter {
+  opacity: 1;
+  transition: opacity 0.2s ease-in;
+}
+
+.trae-buttons-view {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 4px;
+  background: transparent;
+}
+
+.trae-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+.trae-action-button:hover {
+  background: var(--trae-bg-overlay-l2);
+}
+
+.trae-action-button:active {
+  background: var(--trae-bg-overlay-l3);
+}
+
+.trae-action-button:focus-visible {
+  outline: 2px solid var(--trae-status-primary);
+  outline-offset: 1px;
+}
+
+.trae-action-button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--trae-icon-default);
+  flex-shrink: 0;
+}
+
+.trae-action-button-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--trae-text-default);
+  white-space: nowrap;
+}
+
+.trae-edit-toolbar-button-active {
+  background: var(--trae-status-primary-surface-l1) !important;
+  color: var(--trae-status-primary-default) !important;
+}
+
+.trae-edit-toolbar button[data-action='alignment-dropdown']:hover,
+.trae-edit-toolbar button[data-action='text-align-dropdown']:hover,
+.trae-edit-toolbar button[data-action='font-decrease']:hover,
+.trae-edit-toolbar button[data-action='font-increase']:hover,
+.trae-edit-toolbar button[data-action^='align-']:hover {
+  border-radius: 8px;
+  background: var(--bg-bg-overlay-l1, rgba(115, 115, 115, 0.08)) !important;
+}
+
+.trae-edit-toolbar button[data-action='alignment-dropdown']:active,
+.trae-edit-toolbar button[data-action='text-align-dropdown']:active,
+.trae-edit-toolbar button[data-action='font-decrease']:active,
+.trae-edit-toolbar button[data-action='font-increase']:active,
+.trae-edit-toolbar button[data-action^='align-']:active {
+  border-radius: 8px;
+  background: var(--bg-bg-overlay-l2, rgba(115, 115, 115, 0.12)) !important;
+}
+
+.trae-comment-input {
+  background: transparent;
+  color: var(--trae-text-default);
+  caret-color: var(--trae-text-default);
+}
+
+.trae-comment-input::placeholder {
+  color: var(--trae-text-tertiary);
+}
+
+.trae-edit-panel [data-trae-tooltip] {
+  position: relative;
+}
+
+.trae-edit-panel [data-trae-tooltip]::after {
+  content: attr(data-trae-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: var(--z-max, 9999);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--bg-bg-invert, var(--trae-bg-invert));
+  color: var(--text-text-onaccent, var(--trae-text-onaccent));
+  box-shadow: var(--trae-floating-shadow);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.039px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-sizing: border-box;
+  opacity: 0;
+  transform: translateX(-50%);
+  visibility: hidden;
+}
+
+.trae-edit-panel [data-trae-tooltip]::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 5px);
+  z-index: var(--z-max, 9999);
+  width: 8px;
+  height: 4px;
+  background: var(--bg-bg-invert, var(--trae-bg-invert));
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.trae-edit-panel [data-trae-tooltip]:hover::after,
+.trae-edit-panel [data-trae-tooltip]:focus-visible::after,
+.trae-edit-panel [data-trae-tooltip]:hover::before,
+.trae-edit-panel [data-trae-tooltip]:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+.trae-comment-btn {
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.trae-comment-btn:disabled {
+  cursor: not-allowed;
+}
+
+.trae-comment-btn:focus-visible {
+  outline: 2px solid var(--trae-status-primary);
+  outline-offset: 1px;
+}
+
+.trae-comment-btn-primary {
+  background: var(--trae-bg-invert);
+  color: var(--trae-text-onaccent);
+}
+
+.trae-comment-btn-primary:hover:not(:disabled) {
+  background: var(--trae-bg-invert-hover);
+}
+
+.trae-comment-btn-primary:active:not(:disabled) {
+  background: var(--trae-bg-invert-active);
+}
+
+.trae-comment-btn-primary:disabled {
+  background: var(--trae-bg-invert-disabled);
+  color: var(--trae-text-disabled);
+}
+
+.trae-comment-btn-secondary {
+  background: var(--trae-bg-overlay-l2);
+  color: var(--trae-text-default);
+}
+
+.trae-comment-btn-secondary:hover:not(:disabled) {
+  background: var(--trae-bg-overlay-l3);
+}
+
+.trae-comment-btn-secondary:active:not(:disabled) {
+  background: var(--trae-bg-overlay-l4);
+}
+
+.trae-comment-btn-secondary:disabled {
+  background: var(--trae-bg-overlay-l2);
+  color: var(--trae-text-disabled);
+}
+
+.trae-comment-btn-text {
+  background: transparent;
+  color: var(--trae-text-default);
+}
+
+.trae-comment-btn-text:hover:not(:disabled) {
+  border-radius: 8px;
+  background: var(--bg-bg-overlay-l1, var(--trae-bg-overlay-l1));
+  color: var(--trae-text-default-hover);
+}
+
+.trae-comment-btn-text:active:not(:disabled) {
+  border-radius: 8px;
+  background: var(--trae-bg-overlay-l2);
+  color: var(--trae-text-default-active);
+}
+
+.trae-comment-btn-text:disabled {
+  background: transparent;
+  color: var(--trae-text-disabled);
+}
+
+.trae-marking-btn {
+  justify-content: center;
+}
+
+.trae-marking-btn:hover:not(:disabled) {
+  background: var(--trae-bg-overlay-l1) !important;
+}
+
+.trae-marking-btn:active:not(:disabled) {
+  background: var(--trae-bg-overlay-l2) !important;
+}
+
+.trae-marking-btn-active {
+  background: var(--trae-status-primary-surface-l1) !important;
+  color: var(--trae-status-primary-default) !important;
+}
+
+.trae-marking-btn:disabled {
+  color: var(--trae-text-disabled) !important;
+  cursor: not-allowed !important;
+}
+
+.trae-action-button-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--trae-icon-secondary);
+  flex-shrink: 0;
+}
+
+.trae-shortcut-container {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.trae-shortcut-key {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 12px;
+  color: var(--trae-icon-secondary);
+}
+
+.trae-add-to-chat-divider {
+  width: 2px;
+  height: 12px;
+  padding: 0 6px;
+  box-sizing: content-box;
+  background-clip: content-box;
+  background-color: var(--trae-border-l2);
+  flex-shrink: 0;
+}
+
+.trae-editor-view {
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  padding: 8px;
+  background: transparent;
+}
+
+.trae-editor-text-container {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background: var(--trae-bg-overlay-l1);
+  border: 1px solid var(--trae-border-l3);
+  border-radius: 4px;
+  gap: 8px;
+}
+
+.trae-editor-textarea {
+  flex: 1;
+  padding: 0 2px;
+  border: none;
+  background: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--trae-text-default);
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+  max-height: 140px;
+}
+
+.trae-editor-textarea::placeholder {
+  color: var(--trae-text-tertiary);
+}
+
+.trae-editor-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-height 0.2s ease-out,
+    opacity 0.2s ease-out,
+    margin-top 0.2s ease-out;
+}
+
+.trae-editor-action-bar-visible {
+  max-height: 32px;
+  opacity: 1;
+  margin-top: 8px;
+}
+
+.trae-editor-cancel-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 4px;
+  background: var(--trae-bg-overlay-l2);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.trae-editor-cancel-button:hover {
+  background: var(--trae-bg-overlay-l3);
+}
+
+.trae-editor-cancel-button:active {
+  background: var(--trae-bg-overlay-l3);
+}
+
+.trae-editor-cancel-button:focus-visible {
+  outline: 2px solid var(--trae-status-primary);
+  outline-offset: 1px;
+}
+
+.trae-editor-cancel-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--trae-text-default);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.trae-editor-submit-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 8px;
+  background: var(--trae-bg-invert);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.trae-editor-submit-button:hover {
+  background: var(--trae-bg-invert-hover);
+}
+
+.trae-editor-submit-button:active {
+  background: var(--trae-bg-invert-active);
+}
+
+.trae-editor-submit-button:focus-visible {
+  outline: 2px solid var(--trae-status-primary);
+  outline-offset: 1px;
+}
+
+.trae-editor-submit-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--trae-text-onaccent);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.trae-editor-submit-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  color: var(--trae-icon-onaccent);
+  flex-shrink: 0;
+}
+
+.trae-success-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 32px;
+  white-space: nowrap;
+}
+
+.trae-success-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--trae-status-success);
+  flex-shrink: 0;
+}
+
+.trae-success-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--trae-text-default);
+  user-select: none;
+}
+</style></head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>猫藏在哪儿？</h1>
+        <p class="subtitle">6×6 房间随机布置，只有 5 只猫的位置被隐藏。根据提示推理每只猫在哪个网格，选择猫名后点击格子标注，再用有限次数的“捉猫”提交答案。</p>
+      </div>
+      <div class="toolbar">
+        <label>
+          难度
+          <select id="difficulty">
+            <option value="easy">简单</option>
+            <option value="normal" selected="">普通</option>
+            <option value="hard">困难</option>
+          </select>
+        </label>
+        <button class="primary" id="newGameBtn">新一轮</button>
+      </div>
+    </header>
+
+    <section class="layout">
+      <section class="card board-card">
+        <div class="statusbar">
+          <div class="stat"><small>厨房方向</small><strong id="kitchenLabel">右侧厨房</strong></div>
+          <div class="stat"><small>今日菜肴</small><strong id="dishLabel">焖鱼</strong></div>
+          <div class="stat"><small>剩余捉猫</small><strong id="triesLabel">2 次</strong></div>
+          <div class="stat"><small>当前标注</small><strong id="currentLabel">未选择</strong></div>
+        </div>
+
+        <div class="board-wrap">
+          <div class="corner"></div>
+          <div class="cols" id="cols"><div>A</div><div>B</div><div>C</div><div>D</div><div>E</div><div>F</div></div>
+          <div class="rows" id="rows"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div></div>
+          <div class="board" id="board"><button class="cell" type="button" data-id="0-0">
+            <span class="coord">A1</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell" type="button" data-id="0-1">
+            <span class="coord">B1</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-fridge" type="button" data-id="0-2">
+            <span class="coord">C1</span>
+            <span class="object">🧊 冰箱</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen" type="button" data-id="0-3">
+            <span class="coord">D1</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen" type="button" data-id="0-4">
+            <span class="coord">E1</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen" type="button" data-id="0-5">
+            <span class="coord">F1</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell" type="button" data-id="1-0">
+            <span class="coord">A2</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-bookshelf" type="button" data-id="1-1">
+            <span class="coord">B2</span>
+            <span class="object">📚 书架</span>
+            <span><span class="member">👤妹妹</span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-fridge" type="button" data-id="1-2">
+            <span class="coord">C2</span>
+            <span class="object">🧊 冰箱</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen obj-cabinet" type="button" data-id="1-3">
+            <span class="coord">D2</span>
+            <span class="object">🚪 柜子</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen" type="button" data-id="1-4">
+            <span class="coord">E2</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span><span class="member">👤爷爷</span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen" type="button" data-id="1-5">
+            <span class="coord">F2</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-heater" type="button" data-id="2-0">
+            <span class="coord">A3</span>
+            <span class="object">♨️ 暖气片</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-bookshelf" type="button" data-id="2-1">
+            <span class="coord">B3</span>
+            <span class="object">📚 书架</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell" type="button" data-id="2-2">
+            <span class="coord">C3</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen obj-cabinet" type="button" data-id="2-3">
+            <span class="coord">D3</span>
+            <span class="object">🚪 柜子</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen" type="button" data-id="2-4">
+            <span class="coord">E3</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen" type="button" data-id="2-5">
+            <span class="coord">F3</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-heater" type="button" data-id="3-0">
+            <span class="coord">A4</span>
+            <span class="object">♨️ 暖气片</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-bookshelf" type="button" data-id="3-1">
+            <span class="coord">B4</span>
+            <span class="object">📚 书架</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-bed" type="button" data-id="3-2">
+            <span class="coord">C4</span>
+            <span class="object">🛏️ 床</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen obj-bed" type="button" data-id="3-3">
+            <span class="coord">D4</span>
+            <span class="object">🛏️ 床</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen obj-bed" type="button" data-id="3-4">
+            <span class="coord">E4</span>
+            <span class="object">🛏️ 床</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen" type="button" data-id="3-5">
+            <span class="coord">F4</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell" type="button" data-id="4-0">
+            <span class="coord">A5</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-rug" type="button" data-id="4-1">
+            <span class="coord">B5</span>
+            <span class="object">🟫 地毯</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-rug" type="button" data-id="4-2">
+            <span class="coord">C5</span>
+            <span class="object">🟫 地毯</span>
+            <span><span class="member">👤哥哥</span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen obj-rug" type="button" data-id="4-3">
+            <span class="coord">D5</span>
+            <span class="object">🟫 地毯</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen obj-chair" type="button" data-id="4-4">
+            <span class="coord">E5</span>
+            <span class="object">🪑 椅子</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen" type="button" data-id="4-5">
+            <span class="coord">F5</span>
+            <span class="object"><span class="floor-label">地板</span></span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-window" type="button" data-id="5-0">
+            <span class="coord">A6</span>
+            <span class="object">🪟 窗台</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-window" type="button" data-id="5-1">
+            <span class="coord">B6</span>
+            <span class="object">🪟 窗台</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell obj-window" type="button" data-id="5-2">
+            <span class="coord">C6</span>
+            <span class="object">🪟 窗台</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen obj-table" type="button" data-id="5-3">
+            <span class="coord">D6</span>
+            <span class="object">🍽️ 桌子</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen obj-table" type="button" data-id="5-4">
+            <span class="coord">E6</span>
+            <span class="object">🍽️ 桌子</span>
+            <span></span>
+            <span class="marks"></span>
+          </button><button class="cell kitchen obj-table" type="button" data-id="5-5">
+            <span class="coord">F6</span>
+            <span class="object">🍽️ 桌子</span>
+            <span></span>
+            <span class="marks"></span>
+          </button></div>
+        </div>
+
+        <div id="cellPicker" class="cell-picker" style="display: none;">
+          <div class="cell-picker-title">为 <strong id="pickerCoord">-</strong> 选择内容</div>
+          <div class="cell-picker-options" id="pickerOptions"></div>
+        </div>
+
+        <div class="legend">
+          <span><i class="swatch"></i>普通地板或物件格</span>
+          <span><i class="swatch kitchen"></i>厨房影响的半张地图</span>
+          <span><i class="swatch member"></i>家庭成员所在格</span>
+          <span><i class="swatch no"></i>你标记为无猫</span>
+          <span><i class="swatch" style="background:#e8f1ff;border-color:#bcd8f5"></i>选中猫的可能位置</span>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="card panel">
+          <h2>猫咪与线索</h2>
+          <div class="cat-picker" id="catPicker"><button class="cat-btn" type="button"><strong>🐈 雪球</strong><small>未标位置 · 可能 1 格</small><small class="clue">【雪球】喜欢柔软的地方。</small></button><button class="cat-btn" type="button"><strong>🐈 栗子</strong><small>未标位置 · 可能 1 格</small><small class="clue">【栗子】喜欢柔软的地方。</small></button><button class="cat-btn" type="button"><strong>🐈 小虎</strong><small>未标位置 · 可能 1 格</small><small class="clue">【小虎】喜欢柔软的地方。</small></button><button class="cat-btn" type="button"><strong>🐈 豆花</strong><small>未标位置 · 可能 2 格</small><small class="clue">【豆花】喜欢温暖的地方。</small></button><button class="cat-btn" type="button"><strong>🐈 布丁</strong><small>未标位置 · 可能 1 格</small><small class="clue">【布丁】喜欢柔软的地方。</small></button></div>
+        </section>
+
+        <section class="card panel">
+          <h2>铲屎官手记</h2>
+          <ul class="hint-list" id="hintList"><li><span class="tag">冰箱</span>【雪球】昨天晚上又企图打开冰箱偷吃！</li><li><span class="tag">家人</span>【哥哥】不喜欢猫。</li><li><span class="tag">家人</span>【妹妹】不喜欢猫。</li><li><span class="tag">家人</span>【爷爷】喜欢猫。</li><li><span class="tag">厨房</span>【弟弟】正在厨房做焖鱼。</li><li><span class="tag">口味</span>【栗子】不喜欢鱼。</li><li><span class="tag">口味</span>【小虎】喜欢鱼。</li><li><span class="tag">口味</span>【豆花】喜欢鱼。</li><li><span class="tag">口味</span>【雪球】喜欢鱼。</li><li><span class="tag">关系</span>【小虎】和【布丁】一碰面就会打架。</li><li><span class="tag">关系</span>【布丁】和【豆花】一碰面就会打架。</li><li><span class="tag">属性</span>【雪球】不喜欢温暖的地方。</li><li><span class="tag">目击</span>铲屎官记得【豆花】在 F1 周围 3×3 范围内出没。</li><li><span class="tag">目击</span>铲屎官记得【栗子】在 B4 周围 3×3 范围内出没。</li><li><span class="tag">目击</span>铲屎官记得【布丁】在 E5 周围 3×3 范围内出没。</li><li><span class="tag">目击</span>铲屎官记得【小虎】在 D2 周围 3×3 范围内出没。</li><li><span class="tag">目击</span>铲屎官记得【雪球】在 D2 周围 3×3 范围内出没。</li><li><span class="tag">关系</span>【雪球】和【栗子】一碰面就会打架。</li><li><span class="tag">关系</span>【雪球】和【小虎】一碰面就会打架。</li><li><span class="tag">关系</span>【栗子】和【小虎】一碰面就会打架。</li><li><span class="tag">关系</span>【栗子】和【豆花】一碰面就会打架。</li><li><span class="tag">关系</span>【栗子】和【布丁】一碰面就会打架。</li></ul>
+        </section>
+
+        <section class="card panel">
+          <h2>推理过程</h2>
+          <div class="infer-panel" id="inferPanel">
+        <div class="infer-summary">
+          <span>当前合法解总数</span>
+          <span class="big">2</span>
+          <button class="infer-toggle" id="inferToggle">展开步骤</button>
+        </div>
+        <div class="infer-steps "><div class="infer-step"><span class="step-tag">步骤1</span><span class="step-cat">【雪球】</span>应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 36 格排除 35 格，剩 1 格。</div><div class="infer-step"><span class="step-tag">步骤2</span><span class="step-cat">【栗子】</span>应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 36 格排除 35 格，剩 1 格。</div><div class="infer-step"><span class="step-tag">步骤3</span><span class="step-cat">【小虎】</span>应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 36 格排除 32 格，剩 4 格。</div><div class="infer-step"><span class="step-tag">步骤4</span><span class="step-cat">【豆花】</span>应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 36 格排除 34 格，剩 2 格。</div><div class="infer-step"><span class="step-tag">步骤5</span><span class="step-cat">【布丁】</span>应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 36 格排除 31 格，剩 5 格。</div><div class="infer-step"><span class="step-tag">步骤6</span><span class="step-cat">【小虎】</span>与【布丁】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤7</span><span class="step-cat">【布丁】</span>与【豆花】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤8</span><span class="step-cat">【雪球】</span>与【栗子】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤9</span><span class="step-cat">【雪球】</span>与【小虎】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤10</span><span class="step-cat">【栗子】</span>与【小虎】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤11</span><span class="step-cat">【栗子】</span>与【豆花】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤12</span><span class="step-cat">【栗子】</span>与【布丁】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤13</span><span class="step-cat">【小虎】</span>结合“多只猫不同格”和猫之间的关系约束，继续排除 3 格，剩 1 格。</div><div class="infer-step"><span class="step-tag">步骤14</span><span class="step-cat">【布丁】</span>结合“多只猫不同格”和猫之间的关系约束，继续排除 4 格，剩 1 格。</div></div>
+      </div>
+        </section>
+
+        <section class="card panel">
+          <h2>提交</h2>
+          <div id="message" class="message">新一轮已生成。先阅读硬性排除条件，再用同行同列线索缩小范围。</div>
+          <div class="actions">
+            <button class="primary" id="catchBtn">捉猫</button>
+            <button class="secondary" id="clearMarksBtn">清空标注</button>
+            <button class="secondary" id="answerBtn">查看答案</button>
+          </div>
+        </section>
+
+        <section class="card panel">
+          <h2>规则说明</h2>
+          <ol class="rules">
+            <li>每只猫最多只喜欢一种属性（柔软/温暖）。“喜欢柔软/温暖”表示猫一定在对应属性格子的 3×3 范围内；“不喜欢柔软/温暖”表示一定不与任何该属性格子同行或同列。</li>
+            <li>“企图打开冰箱偷吃”表示一定在至少一个冰箱格子的同一行或同一列。</li>
+            <li>任何猫一定不和“不喜欢猫”的家庭成员同行或同列，也一定不在“猫毛过敏”的家庭成员周围 3×3 范围内。</li>
+            <li>厨房在地图外部上、下、左、右之一，会影响对应半张地图；正在做饭的家庭成员不在地图中，不喜欢当天菜肴的猫一定不在该范围内。</li>
+            <li>喜欢猫的家庭成员对猫来说等效为柔软、温暖的生活物件。</li>
+            <li>两只“一碰面就打架”的猫一定不同行也不同列；两只“如胶似漆”的猫一定同行或同列。</li>
+            <li>多只猫一定不同格。</li>
+            <li>家庭成员一定不与柜子、冰箱、桌子、窗台、暖气片同格。</li>
+          </ol>
+        </section>
+
+        <details>
+          <summary>物件属性对照</summary>
+          <p>柔软：床、地毯、沙发，以及喜欢猫的家庭成员。</p>
+          <p>温暖：窗台、暖气片，以及喜欢猫的家庭成员。</p>
+        </details>
+      </aside>
+    </section>
+  </main>
+
+  <div class="modal" id="answerModal" role="dialog" aria-modal="true" aria-labelledby="answerTitle">
+    <div class="modal-card">
+      <h2 id="answerTitle">本轮答案</h2>
+      <div class="answer-grid" id="answerGrid"></div>
+      <div class="actions">
+        <button class="primary" id="closeAnswerBtn">继续推理</button>
+        <button class="secondary" id="modalNewBtn">开新一轮</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SIZE = 6;
+    const COLS = ["A", "B", "C", "D", "E", "F"];
+    const CAT_POOL = ["芝麻", "团子", "乌云", "橘宝", "雪球", "奶盖", "豆花", "小虎", "布丁", "年糕", "栗子", "花卷"];
+    const MEMBER_POOL = ["妈妈", "爸爸", "奶奶", "爷爷", "姐姐", "哥哥", "妹妹", "弟弟"];
+    const DISHES = ["辣椒", "鱼"];
+    const DIRECTIONS = [
+      { key: "top", label: "上方厨房", inKitchen: (r, c) => r < 3 },
+      { key: "bottom", label: "下方厨房", inKitchen: (r, c) => r >= 3 },
+      { key: "left", label: "左侧厨房", inKitchen: (r, c) => c < 3 },
+      { key: "right", label: "右侧厨房", inKitchen: (r, c) => c >= 3 }
+    ];
+
+    const OBJECT_DEFS = [
+      { name: "椅子", key: "chair", icon: "🪑", cells: [[0,0]], high: true, soft: false, warm: false },
+      { name: "桌子", key: "table", icon: "🍽️", cells: [[0,0],[0,1],[0,2]], high: true, soft: false, warm: false },
+      { name: "床", key: "bed", icon: "🛏️", cells: [[0,0],[0,1],[0,2]], high: false, soft: true, warm: false },
+      { name: "地毯", key: "rug", icon: "🟫", cells: [[0,0],[0,1],[0,2]], high: false, soft: true, warm: false },
+      { name: "窗台", key: "window", icon: "🪟", cells: [[0,0],[0,1],[0,2]], high: true, soft: false, warm: true },
+      { name: "暖气片", key: "heater", icon: "♨️", cells: [[0,0],[1,0]], high: false, soft: false, warm: true },
+      { name: "冰箱", key: "fridge", icon: "🧊", cells: [[0,0],[1,0]], high: true, soft: false, warm: false, fridge: true },
+      { name: "柜子", key: "cabinet", icon: "🚪", cells: [[0,0],[1,0]], high: true, soft: false, warm: false },
+      { name: "沙发", key: "sofa", icon: "🛋️", cells: [[0,0],[0,1],[0,2]], high: false, soft: true, warm: false },
+      { name: "书架", key: "bookshelf", icon: "📚", cells: [[0,0],[1,0],[2,0]], high: true, soft: false, warm: false },
+      { name: "鞋架", key: "shoerack", icon: "👞", cells: [[0,0],[0,1]], high: false, soft: false, warm: false }
+    ];
+
+    const state = {
+      cells: [],
+      objects: [],
+      members: [],
+      cats: [],
+      hints: [],
+      activeCell: null,
+      marks: new Map(),
+      noCat: new Set(),
+      tries: 0,
+      difficulty: "normal",
+      kitchen: null,
+      dish: null,
+      cook: null,
+      solved: false,
+      hintCat: null,
+      inferExpanded: false,
+      inference: null
+    };
+
+    const els = {
+      board: document.querySelector("#board"),
+      cols: document.querySelector("#cols"),
+      rows: document.querySelector("#rows"),
+      catPicker: document.querySelector("#catPicker"),
+      hintList: document.querySelector("#hintList"),
+      kitchenLabel: document.querySelector("#kitchenLabel"),
+      dishLabel: document.querySelector("#dishLabel"),
+      triesLabel: document.querySelector("#triesLabel"),
+      currentLabel: document.querySelector("#currentLabel"),
+      message: document.querySelector("#message"),
+      difficulty: document.querySelector("#difficulty"),
+      answerModal: document.querySelector("#answerModal"),
+      answerGrid: document.querySelector("#answerGrid")
+    };
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function sample(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function idOf(r, c) {
+      return `${r}-${c}`;
+    }
+
+    function coordOf(pos) {
+      return `${COLS[pos.c]}${pos.r + 1}`;
+    }
+
+    function parseId(id) {
+      const [r, c] = id.split("-").map(Number);
+      return { r, c };
+    }
+
+    function inBounds(r, c) {
+      return r >= 0 && r < SIZE && c >= 0 && c < SIZE;
+    }
+
+    function resetCells() {
+      state.cells = Array.from({ length: SIZE }, (_, r) =>
+        Array.from({ length: SIZE }, (_, c) => ({
+          r, c, object: null, members: [], cats: []
+        }))
+      );
+    }
+
+    function canPlaceObject(def, r, c, occupied) {
+      return def.cells.every(([dr, dc]) => {
+        const rr = r + dr;
+        const cc = c + dc;
+        return inBounds(rr, cc) && !occupied.has(idOf(rr, cc));
+      });
+    }
+
+    function objectCells(def, r, c) {
+      return def.cells.map(([dr, dc]) => ({ r: r + dr, c: c + dc }));
+    }
+
+    function touchesEdge(def, r, c) {
+      return objectCells(def, r, c).some(pos => pos.r === 0 || pos.r === SIZE - 1 || pos.c === 0 || pos.c === SIZE - 1);
+    }
+
+    function objectCellsAdjacent(defA, rA, cA, defB, rB, cB) {
+      const aCells = objectCells(defA, rA, cA);
+      const bCells = objectCells(defB, rB, cB);
+      return aCells.some(a => bCells.some(b => Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1));
+    }
+
+    function placeObject(def, r, c, occupied) {
+      const obj = { ...def, id: `${def.name}-${state.objects.length}`, origin: { r, c } };
+      state.objects.push(obj);
+      def.cells.forEach(([dr, dc]) => {
+        const rr = r + dr;
+        const cc = c + dc;
+        occupied.add(idOf(rr, cc));
+        state.cells[rr][cc].object = obj;
+      });
+      return obj;
+    }
+
+    function objectOrigins(def, occupied, extraCheck = () => true) {
+      const origins = [];
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (canPlaceObject(def, r, c, occupied) && extraCheck(r, c)) origins.push({ r, c });
+        }
+      }
+      return shuffle(origins);
+    }
+
+    function placeObjects() {
+      const required = ["椅子", "桌子", "地毯", "暖气片", "冰箱", "床", "柜子", "窗台"];
+      const extras = shuffle(OBJECT_DEFS.filter(o => !required.includes(o.name))).slice(0, randInt(0, 1)).map(o => o.name);
+      const names = shuffle([...required, ...extras]);
+      const occupied = new Set();
+      state.objects = [];
+
+      const windowDef = OBJECT_DEFS.find(o => o.name === "窗台");
+      const windowOrigins = objectOrigins(windowDef, occupied, (r, c) => touchesEdge(windowDef, r, c));
+      if (!windowOrigins.length) return false;
+      placeObject(windowDef, windowOrigins[0].r, windowOrigins[0].c, occupied);
+
+      for (const name of names.filter(n => n !== "窗台")) {
+        const def = OBJECT_DEFS.find(o => o.name === name);
+        let placed = false;
+        for (let attempt = 0; attempt < 160 && !placed; attempt++) {
+          const r = randInt(0, SIZE - 1);
+          const c = randInt(0, SIZE - 1);
+          if (!canPlaceObject(def, r, c, occupied)) continue;
+
+          placeObject(def, r, c, occupied);
+          placed = true;
+        }
+        if (!placed && required.includes(name)) return false;
+      }
+      return true;
+    }
+
+    function featureAt(r, c) {
+      const cell = state.cells[r][c];
+      const obj = cell.object;
+      const memberLikeCats = cell.members.some(m => m.attitude === "like");
+      return {
+        soft: Boolean(obj?.soft || memberLikeCats),
+        warm: Boolean(obj?.warm || memberLikeCats),
+        fridge: Boolean(obj?.fridge)
+      };
+    }
+
+    function placeMembers() {
+      state.members = shuffle(MEMBER_POOL).slice(0, randInt(3, 4)).map(name => ({
+        name,
+        attitude: sample(["like", "neutral", "neutral", "dislike", "allergy"]),
+        dishTaste: sample(["like", "neutral", "dislike"])
+      }));
+
+      const used = new Set();
+      for (const member of state.members) {
+        const forbiddenNames = new Set(["柜子", "冰箱", "桌子", "窗台", "暖气片"]);
+        const candidates = allPositions().filter(pos => {
+          const cell = state.cells[pos.r][pos.c];
+          return !used.has(idOf(pos.r, pos.c)) && !forbiddenNames.has(cell.object?.name);
+        });
+        if (!candidates.length) return false;
+        let pos;
+        pos = sample(candidates);
+        used.add(idOf(pos.r, pos.c));
+        member.pos = pos;
+        state.cells[pos.r][pos.c].members.push(member);
+      }
+      return true;
+    }
+
+    function near(posA, posB) {
+      return Math.abs(posA.r - posB.r) <= 1 && Math.abs(posA.c - posB.c) <= 1;
+    }
+
+    function sameRowOrCol(posA, posB) {
+      return posA.r === posB.r || posA.c === posB.c;
+    }
+
+    function hardAllowedForCat(pos, cat, fightPairs = []) {
+      const cell = state.cells[pos.r][pos.c];
+      if (state.members.some(m => m.attitude === "dislike" && sameRowOrCol(pos, m.pos))) return false;
+      if (state.members.some(m => m.attitude === "allergy" && near(pos, m.pos))) return false;
+      if (cat.dishTaste === "dislike" && state.kitchen.inKitchen(pos.r, pos.c)) return false;
+      for (const [a, b] of fightPairs) {
+        if (cat.name !== a && cat.name !== b) continue;
+        const otherName = cat.name === a ? b : a;
+        const other = state.cats.find(x => x.name === otherName);
+        if (other?.pos && sameRowOrCol(pos, other.pos)) return false;
+      }
+      return true;
+    }
+
+    function placeCats() {
+      state.cats = shuffle(CAT_POOL).slice(0, 5).map(name => ({
+        name,
+        dishTaste: sample(["like", "neutral", "neutral", "dislike"])
+      }));
+
+      const usedCatCells = new Set();
+      for (const cat of state.cats) {
+        const candidates = [];
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            const pos = { r, c };
+            if (!usedCatCells.has(idOf(r, c)) && hardAllowedForCat(pos, cat)) candidates.push(pos);
+          }
+        }
+        const fallback = allPositions().filter(pos => !usedCatCells.has(idOf(pos.r, pos.c)));
+        cat.pos = sample(candidates.length ? candidates : fallback);
+        usedCatCells.add(idOf(cat.pos.r, cat.pos.c));
+        state.cells[cat.pos.r][cat.pos.c].cats.push(cat);
+      }
+    }
+
+    function allPositions() {
+      const cells = [];
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) cells.push({ r, c });
+      }
+      return cells;
+    }
+
+    function chooseTries() {
+      if (state.difficulty === "easy") return randInt(4, 5);
+      if (state.difficulty === "hard") return randInt(1, 2);
+      return randInt(2, 4);
+    }
+
+    function catMatchesFeature(cat, feature) {
+      const f = featureAt(cat.pos.r, cat.pos.c);
+      if (feature === "柔软") return f.soft;
+      if (feature === "温暖") return f.warm;
+      return false;
+    }
+
+    function cellAlignedWithAny(pos, predicate) {
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (predicate(r, c) && (pos.r === r || pos.c === c)) return true;
+        }
+      }
+      return false;
+    }
+
+    function catAlignedWithFeature(cat, feature) {
+      return cellAlignedWithAny(cat.pos, (r, c) => featureMatchesCell(feature, r, c));
+    }
+
+    function catAlignedWithFridge(cat) {
+      return cellAlignedWithAny(cat.pos, (r, c) => isFridgeCell(r, c));
+    }
+
+    function catLikesFeature(cat, feature) {
+      const matchingCells = [];
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (featureMatchesCell(feature, r, c)) matchingCells.push({ r, c });
+        }
+      }
+      return matchingCells.some(cell => near(cat.pos, cell));
+    }
+
+    function randomFeature(preferMatch, cat) {
+      const features = ["柔软", "温暖"];
+      const matching = features.filter(f => catLikesFeature(cat, f));
+      const notMatching = features.filter(f => !catAlignedWithFeature(cat, f));
+      if (preferMatch && matching.length) return sample(matching);
+      if (!preferMatch && notMatching.length) return sample(notMatching);
+      return preferMatch ? sample(features) : null;
+    }
+
+    function addHint(kind, text) {
+      state.hints.push({ kind, text });
+    }
+
+    function randomSightingCenter(cat) {
+      const centers = allPositions().filter(pos => near(pos, cat.pos));
+      const nonExact = centers.filter(pos => pos.r !== cat.pos.r || pos.c !== cat.pos.c);
+      return sample(nonExact.length ? nonExact : centers);
+    }
+
+    function assignCluesAndNotes() {
+      const catClueTexts = new Set();
+      for (const cat of state.cats) {
+        const clueHint = state.hints.find(h => h.text.includes(`【${cat.name}】`) && !catClueTexts.has(h.text));
+        cat.clue = clueHint ? clueHint.text : `【${cat.name}】的行踪是个谜。`;
+        if (clueHint) catClueTexts.add(clueHint.text);
+      }
+      state.noteHints = state.hints.filter(h => !catClueTexts.has(h.text));
+    }
+
+    function addOneExtraHint() {
+      const shuffledCats = shuffle([...state.cats]);
+
+      function addSightingHint() {
+        const catsWithoutSighting = state.cats.filter(cat =>
+          !state.hints.some(h => h.kind === "目击" && h.text.includes(`【${cat.name}】`))
+        );
+        if (catsWithoutSighting.length > 0) {
+          const cat = sample(catsWithoutSighting);
+          addHint("目击", `铲屎官记得【${cat.name}】在 ${coordOf(randomSightingCenter(cat))} 周围 3×3 范围内出没。`);
+          return true;
+        }
+        return false;
+      }
+
+      // 尝试1: 为某只猫添加额外属性约束
+      for (const cat of shuffledCats) {
+        const existingProps = state.hints.filter(h => h.kind === "属性" && h.text.includes(`【${cat.name}】`));
+        const usedFeatures = new Set();
+        let hasLike = false;
+        for (const h of existingProps) {
+          const m = h.text.match(/(喜欢|不喜欢)(柔软|温暖)/);
+          if (m) {
+            usedFeatures.add(m[2]);
+            if (m[1] === "喜欢") hasLike = true;
+          }
+        }
+
+        const features = ["柔软", "温暖"];
+        const notMatching = features.filter(f => !catAlignedWithFeature(cat, f) && !usedFeatures.has(f));
+        const matching = features.filter(f => catLikesFeature(cat, f) && !usedFeatures.has(f));
+
+        // 优先添加“不喜欢”（排除型约束）
+        if (notMatching.length > 0) {
+          addHint("属性", `【${cat.name}】不喜欢${sample(notMatching)}的地方。`);
+          return true;
+        }
+        // 每只猫最多只能有一种“喜欢”属性
+        if (!hasLike && matching.length > 0) {
+          addHint("属性", `【${cat.name}】喜欢${sample(matching)}的地方。`);
+          return true;
+        }
+      }
+
+      // 尝试2: 优先添加目击范围线索，用于收束解空间
+      if (addSightingHint()) return true;
+
+      // 尝试3a: 添加额外打架关系
+      for (let i = 0; i < state.cats.length; i++) {
+        for (let j = i + 1; j < state.cats.length; j++) {
+          const a = state.cats[i];
+          const b = state.cats[j];
+          if (a.pos.r === b.pos.r || a.pos.c === b.pos.c) continue;
+          const alreadyRelated = state.hints.some(h =>
+            h.kind === "关系" && h.text.includes(`【${a.name}】`) && h.text.includes(`【${b.name}】`)
+          );
+          if (!alreadyRelated) {
+            addHint("关系", `【${a.name}】和【${b.name}】一碰面就会打架。`);
+            return true;
+          }
+        }
+      }
+
+      // 尝试3b: 少量添加“如胶似漆”关系（两只猫一定同行或同列）
+      if (Math.random() < 0.25) {
+        for (let i = 0; i < state.cats.length; i++) {
+          for (let j = i + 1; j < state.cats.length; j++) {
+            const a = state.cats[i];
+            const b = state.cats[j];
+            // 只有真实同行或同列的猫才生成“如胶似漆”，保证提示成立
+            if (a.pos.r !== b.pos.r && a.pos.c !== b.pos.c) continue;
+            const alreadyRelated = state.hints.some(h =>
+              h.kind === "关系" && h.text.includes(`【${a.name}】`) && h.text.includes(`【${b.name}】`)
+            );
+            if (!alreadyRelated) {
+              addHint("关系", `【${a.name}】和【${b.name}】如胶似漆！`);
+              return true;
+            }
+          }
+        }
+      }
+
+      // 尝试4: 添加额外冰箱约束
+      const catsWithoutFridge = state.cats.filter(cat =>
+        !state.hints.some(h => h.kind === "冰箱" && h.text.includes(`【${cat.name}】`))
+      );
+      const fridgeCandidates = catsWithoutFridge.filter(cat => catAlignedWithFridge(cat));
+      if (fridgeCandidates.length > 0) {
+        const cat = sample(fridgeCandidates);
+        addHint("冰箱", `【${cat.name}】${sample(["昨天晚上", "今天早上", "刚才"])}又企图打开冰箱偷吃！`);
+        return true;
+      }
+
+      // 尝试5: 添加额外口味约束（信息性）
+      const catsWithoutTaste = state.cats.filter(cat =>
+        !state.hints.some(h => h.kind === "口味" && h.text.includes(`【${cat.name}】`))
+      );
+      if (catsWithoutTaste.length > 0) {
+        const cat = sample(catsWithoutTaste);
+        addHint("口味", `【${cat.name}】${cat.dishTaste === "dislike" ? "不喜欢" : "喜欢"}${state.dish}。`);
+        return true;
+      }
+
+      return false;
+    }
+
+    function generateHints() {
+      state.hints = [];
+
+      for (const cat of state.cats) {
+        const likes = Math.random() < .72;
+        const feature = randomFeature(likes, cat);
+        if (feature) addHint("属性", `【${cat.name}】${likes ? "喜欢" : "不喜欢"}${feature}的地方。`);
+      }
+
+      const fridgeCats = shuffle(state.cats).slice(0, 2);
+      for (const cat of fridgeCats.filter(cat => catAlignedWithFridge(cat))) {
+        const time = sample(["昨天晚上", "今天早上", "刚才"]);
+        addHint("冰箱", `【${cat.name}】${time}又企图打开冰箱偷吃！`);
+      }
+
+      for (const member of state.members.filter(member => member.attitude !== "neutral")) {
+        const label = member.attitude === "like" ? "喜欢猫" : member.attitude === "dislike" ? "不喜欢猫" : member.attitude === "allergy" ? "猫毛过敏" : "对猫没什么意见";
+        addHint("家人", `【${member.name}】${label}。`);
+      }
+
+      const mappedMemberNames = new Set(state.members.map(member => member.name));
+      state.cook = { name: sample(MEMBER_POOL.filter(name => !mappedMemberNames.has(name))) };
+      addHint("厨房", `【${state.cook.name}】正在厨房做${state.dish === "辣椒" ? "炒辣椒" : "焖鱼"}。`);
+
+      const dislikedDishCats = state.cats.filter(cat => cat.dishTaste === "dislike");
+      const likedDishCats = shuffle(state.cats.filter(cat => cat.dishTaste !== "dislike")).slice(0, 3);
+      for (const cat of [...dislikedDishCats, ...likedDishCats]) {
+        addHint("口味", `【${cat.name}】${cat.dishTaste === "dislike" ? "不喜欢" : "喜欢"}${state.dish}。`);
+      }
+
+      const pairs = [];
+      const shuffledCats = shuffle(state.cats);
+      for (let i = 0; i < shuffledCats.length - 1; i++) {
+        const a = shuffledCats[i];
+        const b = shuffledCats[i + 1];
+        if (a.pos.r !== b.pos.r && a.pos.c !== b.pos.c) {
+          pairs.push([a, b]);
+          if (pairs.length >= 2) break;
+        }
+      }
+      for (const [a, b] of pairs) {
+        addHint("关系", `【${a.name}】和【${b.name}】一碰面就会打架。`);
+      }
+
+      // 计算当前解空间，如果 > 2 则动态添加额外铲屎官手记
+      let extraAttempts = 0;
+      const MAX_EXTRA = 30;
+
+      do {
+        assignCluesAndNotes();
+        buildInference();
+
+        if (state.inference.solutionCount > 0 && state.inference.solutionCount <= 2) break;
+        if (state.inference.solutionCount === 0) break;
+        if (extraAttempts >= MAX_EXTRA) break;
+
+        if (!addOneExtraHint()) break;
+        extraAttempts++;
+      } while (true);
+    }
+
+    // ===================== 推理引擎 =====================
+
+    function featureMatchesCell(feature, r, c) {
+      const f = featureAt(r, c);
+      if (feature === "柔软") return f.soft;
+      if (feature === "温暖") return f.warm;
+      return false;
+    }
+
+    function isFridgeCell(r, c) {
+      return Boolean(state.cells[r][c].object?.fridge);
+    }
+
+    function parseConstraints() {
+      const constraints = { hard: [], fightPairs: [], gluePairs: [] };
+
+      for (const cat of state.cats) {
+        // 属性提示 - 处理该猫的所有属性提示
+        for (const h of state.hints.filter(h => h.kind === "属性" && h.text.includes(`【${cat.name}】`))) {
+          const m = h.text.match(/(喜欢|不喜欢)(柔软|温暖)的地方/);
+          if (m) {
+            if (m[1] === "喜欢") {
+              const featureCells = [];
+              for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                  if (featureMatchesCell(m[2], r, c)) featureCells.push({ r, c });
+                }
+              }
+              constraints.hard.push({ cat: cat.name, type: "feature_like", feature: m[2], cells: featureCells });
+            } else {
+              constraints.hard.push({ cat: cat.name, type: "feature_not_line", feature: m[2] });
+            }
+          }
+        }
+        // 冰箱提示 - 处理该猫的所有冰箱提示
+        for (const h of state.hints.filter(h => h.kind === "冰箱" && h.text.includes(`【${cat.name}】`))) {
+          constraints.hard.push({ cat: cat.name, type: "fridge_line" });
+        }
+        // 口味提示（硬性排除厨房范围）
+        for (const h of state.hints.filter(h => h.kind === "口味" && h.text.includes(`【${cat.name}】`))) {
+          const tm = h.text.match(/(喜欢|不喜欢)(辣椒|鱼)/);
+          if (tm && tm[1] === "不喜欢" && tm[2] === state.dish) {
+            constraints.hard.push({ cat: cat.name, type: "kitchen" });
+          }
+        }
+        // 目击范围提示
+        for (const h of state.hints.filter(h => h.kind === "目击" && h.text.includes(`【${cat.name}】`))) {
+          const sm = h.text.match(/([A-F])([1-6]) 周围 3×3/);
+          if (sm) {
+            constraints.hard.push({
+              cat: cat.name,
+              type: "sighting_area",
+              center: { r: Number(sm[2]) - 1, c: COLS.indexOf(sm[1]) }
+            });
+          }
+        }
+      }
+
+      // 家庭成员态度（硬性，影响所有猫）
+      for (const member of state.members) {
+        if (member.attitude === "dislike") {
+          constraints.hard.push({ type: "member_dislike", member: member.name, pos: member.pos });
+        } else if (member.attitude === "allergy") {
+          constraints.hard.push({ type: "member_allergy", member: member.name, pos: member.pos });
+        }
+      }
+
+      // 关系提示：打架 / 如胶似漆
+      for (const h of state.hints.filter(h => h.kind === "关系")) {
+        const m = h.text.match(/【(.+?)】和【(.+?)】/);
+        if (!m) continue;
+        if (h.text.includes("打架")) {
+          constraints.fightPairs.push([m[1], m[2]]);
+        } else if (h.text.includes("如胶似漆")) {
+          constraints.gluePairs.push([m[1], m[2]]);
+        }
+      }
+
+      return constraints;
+    }
+
+    function hardPosOk(pos, catName, constraints) {
+      const cell = state.cells[pos.r][pos.c];
+
+      for (const con of constraints.hard) {
+        if (con.cat && con.cat !== catName) continue;
+        if (con.type === "feature_not_line" && cellAlignedWithAny(pos, (r, c) => featureMatchesCell(con.feature, r, c))) return false;
+        if (con.type === "feature_like") {
+          if (!con.cells.some(cell => near(pos, cell))) return false;
+        }
+        if (con.type === "fridge_line" && !cellAlignedWithAny(pos, (r, c) => isFridgeCell(r, c))) return false;
+        if (con.type === "kitchen" && state.kitchen.inKitchen(pos.r, pos.c)) return false;
+        if (con.type === "sighting_area" && !near(pos, con.center)) return false;
+        if (con.type === "member_dislike" && sameRowOrCol(pos, con.pos)) return false;
+        if (con.type === "member_allergy" && near(pos, con.pos)) return false;
+      }
+      return true;
+    }
+
+    function pairMatches(pair, a, b) {
+      return (pair[0] === a && pair[1] === b) || (pair[0] === b && pair[1] === a);
+    }
+
+    function relationOkBetween(catA, posA, catB, posB, constraints) {
+      if (posA.r === posB.r && posA.c === posB.c) return false;
+      if (constraints.fightPairs.some(pair => pairMatches(pair, catA, catB)) && sameRowOrCol(posA, posB)) return false;
+      if (constraints.gluePairs.some(pair => pairMatches(pair, catA, catB)) && !sameRowOrCol(posA, posB)) return false;
+      return true;
+    }
+
+    function solveAssignments(constraints, possible, limit = 3) {
+      const catNames = state.cats.map(c => c.name).sort((a, b) => {
+        return possible[a].all.length - possible[b].all.length;
+      });
+      const positions = {};
+      for (const name of catNames) {
+        positions[name] = possible[name].all;
+      }
+
+      let count = 0;
+      const assigned = {};
+      const solutions = [];
+
+      function backtrack(idx) {
+        if (count >= limit) return;
+        if (idx === catNames.length) {
+          count++;
+          solutions.push({ ...assigned });
+          return;
+        }
+        const name = catNames[idx];
+        for (const pos of positions[name]) {
+          const key = idOf(pos.r, pos.c);
+
+          let ok = true;
+          for (const [otherName, otherKey] of Object.entries(assigned)) {
+            const otherPos = parseId(otherKey);
+            if (!relationOkBetween(name, pos, otherName, otherPos, constraints)) {
+              ok = false;
+              break;
+            }
+          }
+          if (!ok) continue;
+
+          assigned[name] = key;
+          backtrack(idx + 1);
+          delete assigned[name];
+          if (count >= limit) return;
+        }
+      }
+
+      backtrack(0);
+      return { count: count >= limit ? limit : count, solutions };
+    }
+
+    function buildInference() {
+      const constraints = parseConstraints();
+      const steps = [];
+      const possible = {};
+
+      for (const cat of state.cats) {
+        const all = [];
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            all.push({ r, c });
+          }
+        }
+
+        const afterHard = all.filter(pos => hardPosOk(pos, cat.name, constraints));
+        const removedHard = all.length - afterHard.length;
+        steps.push({ cat: cat.name, text: `应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 ${all.length} 格排除 ${removedHard} 格，剩 ${afterHard.length} 格。` });
+        possible[cat.name] = { all: afterHard, preferred: [], softDesc: "" };
+      }
+
+      // 第3步：关系说明
+      if (constraints.fightPairs.length) {
+        for (const [a, b] of constraints.fightPairs) {
+          steps.push({ cat: a, text: `与【${b}】一碰面就会打架，二者不能同行或同列。` });
+        }
+      }
+      if (constraints.gluePairs.length) {
+        for (const [a, b] of constraints.gluePairs) {
+          steps.push({ cat: a, text: `与【${b}】如胶似漆，二者一定同行或同列。` });
+        }
+      }
+
+      // 第4步：计算合法解总数
+      const solved = solveAssignments(constraints, possible);
+      const solutionCount = solved.count;
+
+      if (solutionCount > 0 && solutionCount <= 2) {
+        for (const cat of state.cats) {
+          const supported = new Set(solved.solutions.map(solution => solution[cat.name]));
+          const before = possible[cat.name].all.length;
+          possible[cat.name].all = possible[cat.name].all.filter(pos => supported.has(idOf(pos.r, pos.c)));
+          const removed = before - possible[cat.name].all.length;
+          if (removed > 0) {
+            steps.push({ cat: cat.name, text: `结合“多只猫不同格”和猫之间的关系约束，继续排除 ${removed} 格，剩 ${possible[cat.name].all.length} 格。` });
+          }
+        }
+      }
+
+      state.inference = { constraints, steps, possible, solutionCount, solutions: solved.solutions };
+    }
+
+    function countSolutions(constraints, possible) {
+      return solveAssignments(constraints, possible).count;
+    }
+
+    function ensurePlayableGeneration() {
+      for (let attempt = 0; attempt < 300; attempt++) {
+        resetCells();
+        state.cook = null;
+        state.kitchen = sample(DIRECTIONS);
+        state.dish = sample(DISHES);
+        if (!placeObjects()) continue;
+        const floorCount = state.cells.flat().filter(cell => !cell.object).length;
+        if (floorCount < 8) continue;
+        if (!placeMembers()) continue;
+        placeCats();
+        generateHints();
+        if (state.inference && state.inference.solutionCount > 0 && state.inference.solutionCount <= 2) return;
+      }
+    }
+
+    function newGame() {
+      state.difficulty = els.difficulty.value;
+      state.activeCell = null;
+      state.hintCat = null;
+      state.inferExpanded = false;
+      state.marks = new Map();
+      state.noCat = new Set();
+      state.tries = chooseTries();
+      state.solved = false;
+      ensurePlayableGeneration();
+      renderAll();
+      setMessage("新一轮已生成。先阅读硬性排除条件，再用同行同列线索缩小范围。", "");
+    }
+
+    function renderAll() {
+      renderLabels();
+      renderBoard();
+      renderCats();
+      renderHints();
+      renderInference();
+      renderStatus();
+      renderCellPicker();
+    }
+
+    function renderLabels() {
+      els.cols.innerHTML = COLS.map(c => `<div>${c}</div>`).join("");
+      els.rows.innerHTML = Array.from({ length: SIZE }, (_, i) => `<div>${i + 1}</div>`).join("");
+    }
+
+    function renderBoard() {
+      els.board.innerHTML = "";
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          const cell = state.cells[r][c];
+          const id = idOf(r, c);
+          const div = document.createElement("button");
+          div.className = "cell";
+          div.type = "button";
+          div.dataset.id = id;
+          if (state.kitchen.inKitchen(r, c)) div.classList.add("kitchen");
+          if (cell.object?.key) div.classList.add(`obj-${cell.object.key}`);
+          if (state.noCat.has(id)) div.classList.add("no-cat");
+          if (state.activeCell === id) div.classList.add("active-cell");
+
+          if (state.hintCat && state.inference) {
+            const poss = state.inference.possible[state.hintCat];
+            if (poss) {
+              const isAll = poss.all.some(p => p.r === r && p.c === c);
+              const isPref = poss.preferred.some(p => p.r === r && p.c === c);
+              if (isPref) div.classList.add("possible-preferred");
+              else if (isAll) div.classList.add("possible-cell");
+            }
+          }
+
+          const objText = cell.object
+            ? `${cell.object.icon} ${cell.object.name}`
+            : `<span class="floor-label">地板</span>`;
+          const memberText = cell.members.map(m => `<span class="member">👤${m.name}</span>`).join("");
+          const marks = [
+            ...getCellMark(id).map(cat => `<span class="mark">${cat}</span>`),
+            state.noCat.has(id) ? `<span class="mark empty">无猫</span>` : ""
+          ].join("");
+
+          div.innerHTML = `
+            <span class="coord">${COLS[c]}${r + 1}</span>
+            <span class="object">${objText}</span>
+            <span>${memberText}</span>
+            <span class="marks">${marks}</span>
+          `;
+          div.addEventListener("click", () => markCell(id));
+          els.board.appendChild(div);
+        }
+      }
+    }
+
+    function renderCats() {
+      els.catPicker.innerHTML = "";
+      for (const cat of state.cats) {
+        const btn = document.createElement("button");
+        btn.className = "cat-btn";
+        btn.type = "button";
+        if (isCatCorrect(cat.name)) btn.classList.add("found");
+        if (state.hintCat === cat.name) btn.classList.add("hint-active");
+        const marked = findMarkedPosition(cat.name);
+        const status = marked ? `已标 ${coordOf(marked)}` : "未标位置";
+        const possCount = state.inference?.possible[cat.name]?.all.length;
+        const possLabel = possCount != null ? ` · 可能 ${possCount} 格` : "";
+        btn.innerHTML = `<strong>🐈 ${cat.name}</strong><small>${status}${possLabel}</small><small class="clue">${cat.clue || ""}</small>`;
+        btn.addEventListener("click", () => {
+          state.hintCat = state.hintCat === cat.name ? null : cat.name;
+          state.activeCell = null;
+          renderAll();
+        });
+        els.catPicker.appendChild(btn);
+      }
+    }
+
+    function renderInference() {
+      const panel = document.querySelector("#inferPanel");
+      if (!state.inference) { panel.innerHTML = ""; return; }
+      const inf = state.inference;
+      const countText = inf.solutionCount > 2 ? ">2" : inf.solutionCount;
+      const stepsHtml = inf.steps.map((s, i) => {
+        return `<div class="infer-step"><span class="step-tag">步骤${i + 1}</span><span class="step-cat">【${s.cat}】</span>${s.text}</div>`;
+      }).join("");
+      panel.innerHTML = `
+        <div class="infer-summary">
+          <span>当前合法解总数</span>
+          <span class="big">${countText}</span>
+          <button class="infer-toggle" id="inferToggle">${state.inferExpanded ? "收起步骤" : "展开步骤"}</button>
+        </div>
+        <div class="infer-steps ${state.inferExpanded ? "show" : ""}">${stepsHtml}</div>
+      `;
+      document.querySelector("#inferToggle").addEventListener("click", () => {
+        state.inferExpanded = !state.inferExpanded;
+        renderInference();
+      });
+    }
+
+    function renderHints() {
+      const hints = state.noteHints && state.noteHints.length ? state.noteHints : state.hints;
+      els.hintList.innerHTML = hints.map(h => `<li><span class="tag">${h.kind}</span>${h.text}</li>`).join("");
+    }
+
+    function renderStatus() {
+      els.kitchenLabel.textContent = state.kitchen.label;
+      els.dishLabel.textContent = state.dish === "辣椒" ? "炒辣椒" : "焖鱼";
+      els.triesLabel.textContent = `${state.tries} 次`;
+      const pos = state.activeCell ? parseId(state.activeCell) : null;
+      els.currentLabel.textContent = pos ? `${COLS[pos.c]}${pos.r + 1}` : "未选择";
+      document.querySelector("#catchBtn").disabled = state.solved || state.tries <= 0;
+    }
+
+    function getCellMark(id) {
+      if (!state.marks.has(id)) state.marks.set(id, new Set());
+      return [...state.marks.get(id)];
+    }
+
+    function markCell(id) {
+      if (state.solved) return;
+      if (state.activeCell === id) {
+        state.activeCell = null;
+      } else {
+        state.activeCell = id;
+      }
+      renderCellPicker();
+      renderBoard();
+      renderStatus();
+    }
+
+    function renderCellPicker() {
+      const picker = document.querySelector("#cellPicker");
+      const coordEl = document.querySelector("#pickerCoord");
+      const optionsEl = document.querySelector("#pickerOptions");
+
+      if (!state.activeCell) {
+        picker.style.display = "none";
+        return;
+      }
+
+      picker.style.display = "block";
+      const pos = parseId(state.activeCell);
+      coordEl.textContent = `${COLS[pos.c]}${pos.r + 1}`;
+
+      const currentMarks = getCellMark(state.activeCell);
+      const isNoCat = state.noCat.has(state.activeCell);
+
+      let html = "";
+      for (const cat of state.cats) {
+        const active = currentMarks.includes(cat.name);
+        html += `<button class="picker-btn ${active ? "active" : ""}" data-action="cat" data-cat="${cat.name}">${cat.name}</button>`;
+      }
+      html += `<button class="picker-btn ${isNoCat ? "active" : ""}" data-action="noCat">无猫</button>`;
+      html += `<button class="picker-btn" data-action="clear">清除</button>`;
+      html += `<button class="picker-btn" data-action="close">关闭</button>`;
+
+      optionsEl.innerHTML = html;
+
+      optionsEl.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const action = btn.dataset.action;
+          const id = state.activeCell;
+          if (action === "cat") {
+            const catName = btn.dataset.cat;
+            const set = state.marks.get(id) || new Set();
+            if (set.has(catName)) {
+              set.delete(catName);
+              state.marks.set(id, set);
+            } else {
+              for (const [otherId, otherSet] of state.marks.entries()) {
+                if (otherId !== id && otherSet.has(catName)) otherSet.delete(catName);
+              }
+              set.clear();
+              set.add(catName);
+              state.marks.set(id, set);
+            }
+            if (state.noCat.has(id)) state.noCat.delete(id);
+          } else if (action === "noCat") {
+            if (state.noCat.has(id)) state.noCat.delete(id);
+            else {
+              state.noCat.add(id);
+              state.marks.set(id, new Set());
+            }
+          } else if (action === "clear") {
+            state.noCat.delete(id);
+            state.marks.set(id, new Set());
+          } else if (action === "close") {
+            state.activeCell = null;
+          }
+          renderCellPicker();
+          renderBoard();
+          renderCats();
+          renderStatus();
+        });
+      });
+    }
+
+    function findMarkedPosition(catName) {
+      for (const [id, set] of state.marks.entries()) {
+        if (set.has(catName)) return parseId(id);
+      }
+      return null;
+    }
+
+    function isCatCorrect(catName) {
+      const marked = findMarkedPosition(catName);
+      if (!marked) return false;
+      const markedId = idOf(marked.r, marked.c);
+      if (state.inference?.solutions?.length) {
+        return state.inference.solutions.some(solution => solution[catName] === markedId);
+      }
+      const cat = state.cats.find(c => c.name === catName);
+      return Boolean(cat && marked.r === cat.pos.r && marked.c === cat.pos.c);
+    }
+
+    function submittedSolutionMatches(solution) {
+      const catCellIds = new Set(Object.values(solution));
+      for (const cat of state.cats) {
+        const marked = findMarkedPosition(cat.name);
+        if (!marked || solution[cat.name] !== idOf(marked.r, marked.c)) return false;
+      }
+      for (const id of state.noCat) {
+        if (catCellIds.has(id)) return false;
+      }
+      return true;
+    }
+
+    function validateSolution() {
+      const missing = state.cats.filter(cat => !findMarkedPosition(cat.name));
+      if (missing.length) {
+        setMessage(`还有 ${missing.length} 只猫没有标位置：${missing.map(c => c.name).join("、")}。`, "fail");
+        return false;
+      }
+
+      const validSolutions = state.inference?.solutions || [];
+      const matchedLegalSolution = validSolutions.some(solution => submittedSolutionMatches(solution));
+      const wrongCats = validSolutions.length
+        ? (matchedLegalSolution ? [] : state.cats)
+        : state.cats.filter(cat => !isCatCorrect(cat.name));
+      const wrongNoCat = matchedLegalSolution ? [] : [...state.noCat].filter(id => {
+        const pos = parseId(id);
+        return state.cells[pos.r][pos.c].cats.length > 0;
+      });
+
+      state.tries = Math.max(0, state.tries - 1);
+      if (validSolutions.length ? matchedLegalSolution : (wrongCats.length === 0 && wrongNoCat.length === 0)) {
+        state.solved = true;
+        setMessage(`通关！你在剩余 ${state.tries} 次捉猫机会时找到了一个合法答案。`, "win");
+      } else {
+        const pieces = [];
+        if (validSolutions.length) pieces.push("这套标记不匹配任意一个完整合法答案");
+        else if (wrongCats.length) pieces.push(`${wrongCats.length} 只猫的位置不对`);
+        if (wrongNoCat.length) pieces.push(`${wrongNoCat.length} 个“无猫”标记压到了猫`);
+        setMessage(`没捉全：${pieces.join("，")}。还剩 ${state.tries} 次。`, "fail");
+      }
+      renderAll();
+
+      if (state.tries <= 0 && !state.solved) {
+        setMessage("捉猫次数用完了。可以查看答案，或开新一轮。", "fail");
+      }
+      return state.solved;
+    }
+
+    function setMessage(text, type) {
+      els.message.textContent = text;
+      els.message.className = `message ${type || ""}`.trim();
+    }
+
+    function clearMarks() {
+      state.marks = new Map();
+      state.noCat = new Set();
+      renderAll();
+      setMessage("已清空所有玩家标注。", "");
+    }
+
+    function showAnswer() {
+      els.answerGrid.innerHTML = state.cats.map(cat => {
+        const cell = state.cells[cat.pos.r][cat.pos.c];
+        const base = cell.object ? cell.object.name : "地板";
+        const members = cell.members.length ? `；同格成员：${cell.members.map(m => m.name).join("、")}` : "";
+        return `<div class="answer-row"><strong>${cat.name}</strong><span>${coordOf(cat.pos)}，${base}${members}</span></div>`;
+      }).join("");
+      els.answerModal.classList.add("show");
+    }
+
+    function hideAnswer() {
+      els.answerModal.classList.remove("show");
+    }
+
+    function changeDifficulty() {
+      state.difficulty = els.difficulty.value;
+      if (!state.solved) {
+        state.tries = chooseTries();
+        renderStatus();
+        setMessage(`难度已切换，剩余捉猫次数已调整为 ${state.tries} 次。`, "");
+      }
+    }
+
+    document.querySelector("#newGameBtn").addEventListener("click", newGame);
+    els.difficulty.addEventListener("change", changeDifficulty);
+    document.querySelector("#modalNewBtn").addEventListener("click", () => { hideAnswer(); newGame(); });
+    document.querySelector("#closeAnswerBtn").addEventListener("click", hideAnswer);
+    document.querySelector("#answerBtn").addEventListener("click", showAnswer);
+    document.querySelector("#catchBtn").addEventListener("click", validateSolution);
+    document.querySelector("#clearMarksBtn").addEventListener("click", clearMarks);
+    els.answerModal.addEventListener("click", event => {
+      if (event.target === els.answerModal) hideAnswer();
+    });
+
+    newGame();
+  </script>
+
+
+<div data-trae-edit-ui="true"></div></body></html>
