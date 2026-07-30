@@ -91,14 +91,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(760px, max-content) minmax(360px, 1fr);
-      gap: 18px;
-      align-items: start;
-    }
-
-    .play-area {
-      display: grid;
-      grid-template-columns: 210px minmax(560px, max-content);
+      grid-template-columns: minmax(560px, max-content) minmax(380px, 1fr);
       gap: 18px;
       align-items: start;
     }
@@ -294,7 +287,7 @@
 
     .cat-picker {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 8px;
     }
 
@@ -576,7 +569,7 @@
     }
 
     @media (max-width: 980px) {
-      header, .layout, .play-area { grid-template-columns: 1fr; }
+      header, .layout { grid-template-columns: 1fr; }
       .toolbar { justify-content: flex-start; }
       .statusbar { grid-template-columns: repeat(2, 1fr); }
     }
@@ -617,43 +610,41 @@
     </header>
 
     <section class="layout">
-      <div class="play-area">
-        <section class="card panel cat-panel">
+      <section class="card board-card">
+        <div class="statusbar">
+          <div class="stat"><small>厨房方向</small><strong id="kitchenLabel">-</strong></div>
+          <div class="stat"><small>今日菜肴</small><strong id="dishLabel">-</strong></div>
+          <div class="stat"><small>剩余捉猫</small><strong id="triesLabel">-</strong></div>
+          <div class="stat"><small>当前标注</small><strong id="currentLabel">-</strong></div>
+        </div>
+
+        <div class="board-wrap">
+          <div class="corner"></div>
+          <div class="cols" id="cols"></div>
+          <div class="rows" id="rows"></div>
+          <div class="board" id="board"></div>
+        </div>
+
+        <div id="cellPicker" class="cell-picker">
+          <div class="cell-picker-title">为 <strong id="pickerCoord">-</strong> 选择内容</div>
+          <div class="cell-picker-options" id="pickerOptions"></div>
+        </div>
+
+        <div class="legend">
+          <span><i class="swatch"></i>普通地板或物件格</span>
+          <span><i class="swatch kitchen"></i>厨房影响的半张地图</span>
+          <span><i class="swatch member"></i>家庭成员所在格</span>
+          <span><i class="swatch no"></i>你标记为无猫</span>
+          <span><i class="swatch" style="background:#e8f1ff;border-color:#bcd8f5"></i>选中猫的可能位置</span>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="card panel">
           <h2>猫咪与线索</h2>
           <div class="cat-picker" id="catPicker"></div>
         </section>
 
-        <section class="card board-card">
-          <div class="statusbar">
-            <div class="stat"><small>厨房方向</small><strong id="kitchenLabel">-</strong></div>
-            <div class="stat"><small>今日菜肴</small><strong id="dishLabel">-</strong></div>
-            <div class="stat"><small>剩余捉猫</small><strong id="triesLabel">-</strong></div>
-            <div class="stat"><small>当前标注</small><strong id="currentLabel">-</strong></div>
-          </div>
-
-          <div class="board-wrap">
-            <div class="corner"></div>
-            <div class="cols" id="cols"></div>
-            <div class="rows" id="rows"></div>
-            <div class="board" id="board"></div>
-          </div>
-
-          <div id="cellPicker" class="cell-picker">
-            <div class="cell-picker-title">为 <strong id="pickerCoord">-</strong> 选择内容</div>
-            <div class="cell-picker-options" id="pickerOptions"></div>
-          </div>
-
-          <div class="legend">
-            <span><i class="swatch"></i>普通地板或物件格</span>
-            <span><i class="swatch kitchen"></i>厨房影响的半张地图</span>
-            <span><i class="swatch member"></i>家庭成员所在格</span>
-            <span><i class="swatch no"></i>你标记为无猫</span>
-            <span><i class="swatch" style="background:#e8f1ff;border-color:#bcd8f5"></i>选中猫的可能位置</span>
-          </div>
-        </section>
-      </div>
-
-      <aside class="side">
         <section class="card panel">
           <h2>铲屎官手记</h2>
           <ul class="hint-list" id="hintList"></ul>
