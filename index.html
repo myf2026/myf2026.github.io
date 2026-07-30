@@ -1,7 +1,8 @@
-<!DOCTYPE html>
-<html lang="zh-CN" data-trae-theme="light"><head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>像素躲猫猫：猫藏在哪儿？</title>
   <style>
     :root {
@@ -33,7 +34,7 @@
     }
 
     .app {
-      width: min(1280px, calc(100vw - 28px));
+      width: min(1480px, calc(100vw - 28px));
       margin: 0 auto;
       padding: 28px 0 42px;
     }
@@ -90,7 +91,14 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(480px, 1.05fr) minmax(360px, .95fr);
+      grid-template-columns: minmax(760px, max-content) minmax(360px, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .play-area {
+      display: grid;
+      grid-template-columns: 210px minmax(560px, max-content);
       gap: 18px;
       align-items: start;
     }
@@ -103,7 +111,10 @@
       backdrop-filter: blur(10px);
     }
 
-    .board-card { padding: 18px; }
+    .board-card {
+      width: min(100%, 680px);
+      padding: 18px;
+    }
 
     .statusbar {
       display: grid;
@@ -139,6 +150,8 @@
       grid-template-columns: 30px 1fr;
       grid-template-rows: 30px 1fr;
       gap: 8px;
+      max-width: 610px;
+      margin: 0 auto;
     }
 
     .corner { grid-area: 1 / 1; }
@@ -162,8 +175,8 @@
       grid-area: 2 / 2;
       position: relative;
       display: grid;
-      grid-template-columns: repeat(6, minmax(58px, 1fr));
-      grid-template-rows: repeat(6, minmax(58px, 1fr));
+      grid-template-columns: repeat(6, minmax(72px, 1fr));
+      grid-template-rows: repeat(6, minmax(72px, 1fr));
       gap: 7px;
       aspect-ratio: 1;
     }
@@ -214,11 +227,11 @@
     }
 
     .object {
-      font-size: clamp(15px, 2vw, 22px);
+      font-size: clamp(14px, 1.45vw, 19px);
       font-weight: 750;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
       line-height: 1.15;
     }
 
@@ -266,6 +279,7 @@
     .side {
       display: grid;
       gap: 14px;
+      align-items: start;
     }
 
     .panel {
@@ -280,16 +294,17 @@
 
     .cat-picker {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+      grid-template-columns: 1fr;
       gap: 8px;
     }
 
     .cat-btn {
       border-radius: 14px;
-      padding: 10px 9px;
+      padding: 12px 11px;
       background: #fff7ed;
       border: 1px solid var(--line);
       text-align: left;
+      font-size: 15px;
     }
 
     .cat-btn.active {
@@ -561,7 +576,7 @@
     }
 
     @media (max-width: 980px) {
-      header, .layout { grid-template-columns: 1fr; }
+      header, .layout, .play-area { grid-template-columns: 1fr; }
       .toolbar { justify-content: flex-start; }
       .statusbar { grid-template-columns: repeat(2, 1fr); }
     }
@@ -580,640 +595,7 @@
       .statusbar { grid-template-columns: 1fr; }
     }
   </style>
-<script>document.documentElement.setAttribute('data-trae-theme', "light");window.__TRAE_DISABLE_LEGACY_ADD_TO_CHAT__=true;</script><style data-trae-edit-ui="true" id="trae-previewer-tools-styles">:root,
-[data-trae-theme='dark'] {
-  --trae-bg-base-default: #171717;
-  --trae-bg-menu: #222427;
-  --trae-bg-overlay-l1: rgba(255, 255, 255, 0.04);
-  --trae-bg-overlay-l2: rgba(255, 255, 255, 0.08);
-  --trae-bg-overlay-l3: rgba(255, 255, 255, 0.12);
-  --trae-bg-overlay-l4: rgba(255, 255, 255, 0.16);
-  --trae-bg-invert: #f5f9fe;
-  --trae-bg-invert-hover: #e8ecf0;
-  --trae-bg-invert-active: #dce0e4;
-  --trae-bg-invert-disabled: rgba(224, 226, 242, 0.12);
-  --trae-border-l1: #e0e2f217;
-  --trae-border-l2: rgba(255, 255, 255, 0.12);
-  --trae-border-l3: rgba(255, 255, 255, 0.08);
-  --trae-border-neutral-l3: rgba(229, 229, 229, 0.20);
-  --trae-border-brand: #6a6fff;
-  --trae-text-default: #f5f9fe;
-  --trae-text-default-hover: #f5f9fe;
-  --trae-text-default-active: #f5f9fe;
-  --trae-text-secondary: rgba(245, 249, 254, 0.5);
-  --trae-text-tertiary: rgba(245, 249, 254, 0.4);
-  --trae-text-disabled: #666b75;
-  --trae-text-onaccent: #222427;
-  --trae-icon-default: #f5f9fe;
-  --trae-icon-secondary: rgba(245, 249, 254, 0.5);
-  --trae-icon-brand: #6a6fff;
-  --trae-icon-onaccent: #222427;
-  --trae-status-success: #22c55e;
-  --trae-status-primary: #3b82f6;
-  --trae-status-primary-default: #387bff;
-  --trae-status-primary-surface-l1: rgba(53, 121, 255, 0.18);
-  --trae-status-success-default: #33c192;
-  --trae-status-success-surface-l1: rgba(0, 165, 110, 0.18);
-  --trae-status-error-default: #f65a5a;
-  --trae-status-error-surface-l1: rgba(246, 70, 70, 0.18);
-  --trae-annotation-marker-bg: #4b3fe3;
-  --trae-annotation-marker-text: #ffffff;
-  --trae-annotation-region-border: var(--trae-status-primary-default);
-  --trae-annotation-rect-border: var(--trae-status-error-default);
-  --trae-annotation-arrow-anchor-bg: var(--trae-status-primary-default);
-  --trae-panel-shadow: 0px 6px 24px -1px rgba(0, 0, 0, 0.16);
-  --trae-floating-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.2);
-  --trae-shadow-elevation-50: 0 1px 2px -1px rgba(0, 0, 0, 0.45);
-  --trae-tab-active-shadow: 0px 1px 2px -1px rgba(0, 0, 0, 0.16);
-}
-
-[data-trae-theme='light'] {
-  --trae-bg-base-default: #fafafa;
-  --trae-bg-menu: #ffffff;
-  --trae-bg-overlay-l1: rgba(0, 0, 0, 0.04);
-  --trae-bg-overlay-l2: rgba(0, 0, 0, 0.06);
-  --trae-bg-overlay-l3: rgba(0, 0, 0, 0.08);
-  --trae-bg-overlay-l4: rgba(0, 0, 0, 0.12);
-  --trae-bg-invert: #1f2328;
-  --trae-bg-invert-hover: #32383f;
-  --trae-bg-invert-active: #444d56;
-  --trae-bg-invert-disabled: rgba(115, 115, 115, 0.20);
-  --trae-border-l1: rgba(0, 0, 0, 0.1);
-  --trae-border-l2: rgba(0, 0, 0, 0.12);
-  --trae-border-l3: rgba(0, 0, 0, 0.08);
-  --trae-border-neutral-l3: rgba(115, 115, 115, 0.36);
-  --trae-border-brand: #4b3fe3;
-  --trae-text-default: #1f2328;
-  --trae-text-default-hover: #111214;
-  --trae-text-default-active: #111214;
-  --trae-text-secondary: rgba(31, 35, 40, 0.5);
-  --trae-text-tertiary: rgba(31, 35, 40, 0.4);
-  --trae-text-disabled: #a1a1a1;
-  --trae-text-onaccent: #ffffff;
-  --trae-icon-default: #1f2328;
-  --trae-icon-secondary: rgba(31, 35, 40, 0.5);
-  --trae-icon-brand: #4b3fe3;
-  --trae-icon-onaccent: #ffffff;
-  --trae-status-success: #22c55e;
-  --trae-status-primary: #3b82f6;
-  --trae-status-primary-default: #2f74ff;
-  --trae-status-primary-surface-l1: rgba(47, 116, 255, 0.12);
-  --trae-status-success-default: #15a877;
-  --trae-status-success-surface-l1: rgba(64, 176, 139, 0.12);
-  --trae-status-error-default: #e8463a;
-  --trae-status-error-surface-l1: rgba(232, 70, 58, 0.12);
-  --trae-annotation-marker-bg: #4b3fe3;
-  --trae-annotation-marker-text: #ffffff;
-  --trae-annotation-region-border: var(--trae-status-primary-default);
-  --trae-annotation-rect-border: var(--trae-status-error-default);
-  --trae-annotation-arrow-anchor-bg: var(--trae-status-primary-default);
-  --trae-panel-shadow: 0px 6px 24px -1px rgba(24, 24, 24, 0.06);
-  --trae-floating-shadow: 0px 2px 8px 0px rgba(24, 24, 24, 0.2);
-  --trae-shadow-elevation-50: 0 1px 2px -1px rgba(24, 24, 24, 0.08);
-  --trae-tab-active-shadow: 0px 1px 2px -1px rgba(24, 24, 24, 0.08);
-}
-
-@keyframes trae-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.trae-edit-mode-active body *:not([data-trae-edit-ui]):not([data-trae-edit-ui] *) {
-  transition: none !important;
-  animation-play-state: paused !important;
-}
-
-.trae-browser-inspect-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- 独立注入 CSS，无法访问 :root 变量 */
-  z-index: 1400; /* z-layer: fullscreen (1400) */
-  pointer-events: auto;
-  background: transparent;
-}
-
-.trae-browser-inspect-highlight-box {
-  position: absolute;
-  top: 0;
-  left: 0;
-  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- 独立注入 CSS，无法访问 :root 变量 */
-  z-index: 1401; /* above overlay */
-  display: none;
-}
-
-.trae-browser-inspect-highlight-tag {
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  height: 18px;
-  padding: 0 6px;
-  box-sizing: border-box;
-  border-radius: 4px;
-  background-color: var(--trae-status-success-default);
-  color: var(--trae-text-onaccent);
-  font-size: 12px;
-  font-weight: 400;
-  display: none;
-  align-items: center;
-  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- 独立注入 CSS，无法访问 :root 变量 */
-  z-index: 1402; /* above highlight-box */
-}
-
-.trae-browser-inspect-highlight-box-show {
-  display: flex;
-}
-
-.trae-browser-inspect-highlight-tag.trae-browser-inspect-highlight-box-show {
-  display: none;
-}
-
-.trae-browser-inspect-select-button.trae-browser-inspect-highlight-box-show {
-  display: block !important;
-}
-
-.trae-browser-inspect-select-button {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: none;
-  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- 独立注入 CSS，无法访问 :root 变量 */
-  z-index: 1402; /* above overlay, must receive pointer events */
-}
-
-.trae-browser-inspect-select-highlight-box {
-  background: transparent !important;
-}
-
-.trae-browser-inspect-select-highlight-box .trae-browser-inspect-highlight-tag {
-  background-color: var(--trae-status-success-default);
-}
-
-.trae-add-to-chat-card {
-  display: block;
-  overflow: hidden;
-  background: var(--trae-bg-menu);
-  border: 1px solid var(--trae-border-l1);
-  border-radius: 8px;
-  box-shadow: var(--trae-floating-shadow);
-  transition:
-    width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.trae-add-to-chat-content {
-  position: relative;
-  width: max-content;
-}
-
-.trae-fade-exit {
-  opacity: 0;
-  transition: opacity 0.15s ease-out;
-}
-
-.trae-fade-enter {
-  opacity: 1;
-  transition: opacity 0.2s ease-in;
-}
-
-.trae-buttons-view {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 4px;
-  background: transparent;
-}
-
-.trae-action-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transform: none !important;
-  transition: none !important;
-  animation: none !important;
-}
-
-.trae-action-button:hover {
-  background: var(--trae-bg-overlay-l2);
-}
-
-.trae-action-button:active {
-  background: var(--trae-bg-overlay-l3);
-}
-
-.trae-action-button:focus-visible {
-  outline: 2px solid var(--trae-status-primary);
-  outline-offset: 1px;
-}
-
-.trae-action-button-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  color: var(--trae-icon-default);
-  flex-shrink: 0;
-}
-
-.trae-action-button-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 16px;
-  color: var(--trae-text-default);
-  white-space: nowrap;
-}
-
-.trae-edit-toolbar-button-active {
-  background: var(--trae-status-primary-surface-l1) !important;
-  color: var(--trae-status-primary-default) !important;
-}
-
-.trae-edit-toolbar button[data-action='alignment-dropdown']:hover,
-.trae-edit-toolbar button[data-action='text-align-dropdown']:hover,
-.trae-edit-toolbar button[data-action='font-decrease']:hover,
-.trae-edit-toolbar button[data-action='font-increase']:hover,
-.trae-edit-toolbar button[data-action^='align-']:hover {
-  border-radius: 8px;
-  background: var(--bg-bg-overlay-l1, rgba(115, 115, 115, 0.08)) !important;
-}
-
-.trae-edit-toolbar button[data-action='alignment-dropdown']:active,
-.trae-edit-toolbar button[data-action='text-align-dropdown']:active,
-.trae-edit-toolbar button[data-action='font-decrease']:active,
-.trae-edit-toolbar button[data-action='font-increase']:active,
-.trae-edit-toolbar button[data-action^='align-']:active {
-  border-radius: 8px;
-  background: var(--bg-bg-overlay-l2, rgba(115, 115, 115, 0.12)) !important;
-}
-
-.trae-comment-input {
-  background: transparent;
-  color: var(--trae-text-default);
-  caret-color: var(--trae-text-default);
-}
-
-.trae-comment-input::placeholder {
-  color: var(--trae-text-tertiary);
-}
-
-.trae-edit-panel [data-trae-tooltip] {
-  position: relative;
-}
-
-.trae-edit-panel [data-trae-tooltip]::after {
-  content: attr(data-trae-tooltip);
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  z-index: var(--z-max, 9999);
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: var(--bg-bg-invert, var(--trae-bg-invert));
-  color: var(--text-text-onaccent, var(--trae-text-onaccent));
-  box-shadow: var(--trae-floating-shadow);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 16px;
-  letter-spacing: 0.039px;
-  white-space: nowrap;
-  pointer-events: none;
-  box-sizing: border-box;
-  opacity: 0;
-  transform: translateX(-50%);
-  visibility: hidden;
-}
-
-.trae-edit-panel [data-trae-tooltip]::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 5px);
-  z-index: var(--z-max, 9999);
-  width: 8px;
-  height: 4px;
-  background: var(--bg-bg-invert, var(--trae-bg-invert));
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  transform: translateX(-50%);
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-}
-
-.trae-edit-panel [data-trae-tooltip]:hover::after,
-.trae-edit-panel [data-trae-tooltip]:focus-visible::after,
-.trae-edit-panel [data-trae-tooltip]:hover::before,
-.trae-edit-panel [data-trae-tooltip]:focus-visible::before {
-  opacity: 1;
-  visibility: visible;
-}
-
-.trae-comment-btn {
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.trae-comment-btn:disabled {
-  cursor: not-allowed;
-}
-
-.trae-comment-btn:focus-visible {
-  outline: 2px solid var(--trae-status-primary);
-  outline-offset: 1px;
-}
-
-.trae-comment-btn-primary {
-  background: var(--trae-bg-invert);
-  color: var(--trae-text-onaccent);
-}
-
-.trae-comment-btn-primary:hover:not(:disabled) {
-  background: var(--trae-bg-invert-hover);
-}
-
-.trae-comment-btn-primary:active:not(:disabled) {
-  background: var(--trae-bg-invert-active);
-}
-
-.trae-comment-btn-primary:disabled {
-  background: var(--trae-bg-invert-disabled);
-  color: var(--trae-text-disabled);
-}
-
-.trae-comment-btn-secondary {
-  background: var(--trae-bg-overlay-l2);
-  color: var(--trae-text-default);
-}
-
-.trae-comment-btn-secondary:hover:not(:disabled) {
-  background: var(--trae-bg-overlay-l3);
-}
-
-.trae-comment-btn-secondary:active:not(:disabled) {
-  background: var(--trae-bg-overlay-l4);
-}
-
-.trae-comment-btn-secondary:disabled {
-  background: var(--trae-bg-overlay-l2);
-  color: var(--trae-text-disabled);
-}
-
-.trae-comment-btn-text {
-  background: transparent;
-  color: var(--trae-text-default);
-}
-
-.trae-comment-btn-text:hover:not(:disabled) {
-  border-radius: 8px;
-  background: var(--bg-bg-overlay-l1, var(--trae-bg-overlay-l1));
-  color: var(--trae-text-default-hover);
-}
-
-.trae-comment-btn-text:active:not(:disabled) {
-  border-radius: 8px;
-  background: var(--trae-bg-overlay-l2);
-  color: var(--trae-text-default-active);
-}
-
-.trae-comment-btn-text:disabled {
-  background: transparent;
-  color: var(--trae-text-disabled);
-}
-
-.trae-marking-btn {
-  justify-content: center;
-}
-
-.trae-marking-btn:hover:not(:disabled) {
-  background: var(--trae-bg-overlay-l1) !important;
-}
-
-.trae-marking-btn:active:not(:disabled) {
-  background: var(--trae-bg-overlay-l2) !important;
-}
-
-.trae-marking-btn-active {
-  background: var(--trae-status-primary-surface-l1) !important;
-  color: var(--trae-status-primary-default) !important;
-}
-
-.trae-marking-btn:disabled {
-  color: var(--trae-text-disabled) !important;
-  cursor: not-allowed !important;
-}
-
-.trae-action-button-shortcut {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  color: var(--trae-icon-secondary);
-  flex-shrink: 0;
-}
-
-.trae-shortcut-container {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.trae-shortcut-key {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 12px;
-  color: var(--trae-icon-secondary);
-}
-
-.trae-add-to-chat-divider {
-  width: 2px;
-  height: 12px;
-  padding: 0 6px;
-  box-sizing: content-box;
-  background-clip: content-box;
-  background-color: var(--trae-border-l2);
-  flex-shrink: 0;
-}
-
-.trae-editor-view {
-  display: flex;
-  flex-direction: column;
-  width: 320px;
-  padding: 8px;
-  background: transparent;
-}
-
-.trae-editor-text-container {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  background: var(--trae-bg-overlay-l1);
-  border: 1px solid var(--trae-border-l3);
-  border-radius: 4px;
-  gap: 8px;
-}
-
-.trae-editor-textarea {
-  flex: 1;
-  padding: 0 2px;
-  border: none;
-  background: transparent;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 20px;
-  color: var(--trae-text-default);
-  resize: none;
-  outline: none;
-  overflow-y: auto;
-  max-height: 140px;
-}
-
-.trae-editor-textarea::placeholder {
-  color: var(--trae-text-tertiary);
-}
-
-.trae-editor-action-bar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition:
-    max-height 0.2s ease-out,
-    opacity 0.2s ease-out,
-    margin-top 0.2s ease-out;
-}
-
-.trae-editor-action-bar-visible {
-  max-height: 32px;
-  opacity: 1;
-  margin-top: 8px;
-}
-
-.trae-editor-cancel-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  padding: 0 4px;
-  background: var(--trae-bg-overlay-l2);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.trae-editor-cancel-button:hover {
-  background: var(--trae-bg-overlay-l3);
-}
-
-.trae-editor-cancel-button:active {
-  background: var(--trae-bg-overlay-l3);
-}
-
-.trae-editor-cancel-button:focus-visible {
-  outline: 2px solid var(--trae-status-primary);
-  outline-offset: 1px;
-}
-
-.trae-editor-cancel-text {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 16px;
-  color: var(--trae-text-default);
-  white-space: nowrap;
-  padding: 0 4px;
-}
-
-.trae-editor-submit-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  padding: 0 8px;
-  background: var(--trae-bg-invert);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.trae-editor-submit-button:hover {
-  background: var(--trae-bg-invert-hover);
-}
-
-.trae-editor-submit-button:active {
-  background: var(--trae-bg-invert-active);
-}
-
-.trae-editor-submit-button:focus-visible {
-  outline: 2px solid var(--trae-status-primary);
-  outline-offset: 1px;
-}
-
-.trae-editor-submit-text {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 16px;
-  color: var(--trae-text-onaccent);
-  white-space: nowrap;
-  padding: 0 4px;
-}
-
-.trae-editor-submit-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 12px;
-  height: 12px;
-  color: var(--trae-icon-onaccent);
-  flex-shrink: 0;
-}
-
-.trae-success-view {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 12px;
-  height: 32px;
-  white-space: nowrap;
-}
-
-.trae-success-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  color: var(--trae-status-success);
-  flex-shrink: 0;
-}
-
-.trae-success-text {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 18px;
-  color: var(--trae-text-default);
-  user-select: none;
-}
-</style></head>
+</head>
 <body>
   <main class="app">
     <header>
@@ -1226,7 +608,7 @@
           难度
           <select id="difficulty">
             <option value="easy">简单</option>
-            <option value="normal" selected="">普通</option>
+            <option value="normal" selected>普通</option>
             <option value="hard">困难</option>
           </select>
         </label>
@@ -1235,241 +617,56 @@
     </header>
 
     <section class="layout">
-      <section class="card board-card">
-        <div class="statusbar">
-          <div class="stat"><small>厨房方向</small><strong id="kitchenLabel">右侧厨房</strong></div>
-          <div class="stat"><small>今日菜肴</small><strong id="dishLabel">焖鱼</strong></div>
-          <div class="stat"><small>剩余捉猫</small><strong id="triesLabel">2 次</strong></div>
-          <div class="stat"><small>当前标注</small><strong id="currentLabel">未选择</strong></div>
-        </div>
+      <div class="play-area">
+        <section class="card panel cat-panel">
+          <h2>猫咪与线索</h2>
+          <div class="cat-picker" id="catPicker"></div>
+        </section>
 
-        <div class="board-wrap">
-          <div class="corner"></div>
-          <div class="cols" id="cols"><div>A</div><div>B</div><div>C</div><div>D</div><div>E</div><div>F</div></div>
-          <div class="rows" id="rows"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div></div>
-          <div class="board" id="board"><button class="cell" type="button" data-id="0-0">
-            <span class="coord">A1</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell" type="button" data-id="0-1">
-            <span class="coord">B1</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-fridge" type="button" data-id="0-2">
-            <span class="coord">C1</span>
-            <span class="object">🧊 冰箱</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen" type="button" data-id="0-3">
-            <span class="coord">D1</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen" type="button" data-id="0-4">
-            <span class="coord">E1</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen" type="button" data-id="0-5">
-            <span class="coord">F1</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell" type="button" data-id="1-0">
-            <span class="coord">A2</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-bookshelf" type="button" data-id="1-1">
-            <span class="coord">B2</span>
-            <span class="object">📚 书架</span>
-            <span><span class="member">👤妹妹</span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-fridge" type="button" data-id="1-2">
-            <span class="coord">C2</span>
-            <span class="object">🧊 冰箱</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen obj-cabinet" type="button" data-id="1-3">
-            <span class="coord">D2</span>
-            <span class="object">🚪 柜子</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen" type="button" data-id="1-4">
-            <span class="coord">E2</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span><span class="member">👤爷爷</span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen" type="button" data-id="1-5">
-            <span class="coord">F2</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-heater" type="button" data-id="2-0">
-            <span class="coord">A3</span>
-            <span class="object">♨️ 暖气片</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-bookshelf" type="button" data-id="2-1">
-            <span class="coord">B3</span>
-            <span class="object">📚 书架</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell" type="button" data-id="2-2">
-            <span class="coord">C3</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen obj-cabinet" type="button" data-id="2-3">
-            <span class="coord">D3</span>
-            <span class="object">🚪 柜子</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen" type="button" data-id="2-4">
-            <span class="coord">E3</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen" type="button" data-id="2-5">
-            <span class="coord">F3</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-heater" type="button" data-id="3-0">
-            <span class="coord">A4</span>
-            <span class="object">♨️ 暖气片</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-bookshelf" type="button" data-id="3-1">
-            <span class="coord">B4</span>
-            <span class="object">📚 书架</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-bed" type="button" data-id="3-2">
-            <span class="coord">C4</span>
-            <span class="object">🛏️ 床</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen obj-bed" type="button" data-id="3-3">
-            <span class="coord">D4</span>
-            <span class="object">🛏️ 床</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen obj-bed" type="button" data-id="3-4">
-            <span class="coord">E4</span>
-            <span class="object">🛏️ 床</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen" type="button" data-id="3-5">
-            <span class="coord">F4</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell" type="button" data-id="4-0">
-            <span class="coord">A5</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-rug" type="button" data-id="4-1">
-            <span class="coord">B5</span>
-            <span class="object">🟫 地毯</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-rug" type="button" data-id="4-2">
-            <span class="coord">C5</span>
-            <span class="object">🟫 地毯</span>
-            <span><span class="member">👤哥哥</span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen obj-rug" type="button" data-id="4-3">
-            <span class="coord">D5</span>
-            <span class="object">🟫 地毯</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen obj-chair" type="button" data-id="4-4">
-            <span class="coord">E5</span>
-            <span class="object">🪑 椅子</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen" type="button" data-id="4-5">
-            <span class="coord">F5</span>
-            <span class="object"><span class="floor-label">地板</span></span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-window" type="button" data-id="5-0">
-            <span class="coord">A6</span>
-            <span class="object">🪟 窗台</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-window" type="button" data-id="5-1">
-            <span class="coord">B6</span>
-            <span class="object">🪟 窗台</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell obj-window" type="button" data-id="5-2">
-            <span class="coord">C6</span>
-            <span class="object">🪟 窗台</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen obj-table" type="button" data-id="5-3">
-            <span class="coord">D6</span>
-            <span class="object">🍽️ 桌子</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen obj-table" type="button" data-id="5-4">
-            <span class="coord">E6</span>
-            <span class="object">🍽️ 桌子</span>
-            <span></span>
-            <span class="marks"></span>
-          </button><button class="cell kitchen obj-table" type="button" data-id="5-5">
-            <span class="coord">F6</span>
-            <span class="object">🍽️ 桌子</span>
-            <span></span>
-            <span class="marks"></span>
-          </button></div>
-        </div>
+        <section class="card board-card">
+          <div class="statusbar">
+            <div class="stat"><small>厨房方向</small><strong id="kitchenLabel">-</strong></div>
+            <div class="stat"><small>今日菜肴</small><strong id="dishLabel">-</strong></div>
+            <div class="stat"><small>剩余捉猫</small><strong id="triesLabel">-</strong></div>
+            <div class="stat"><small>当前标注</small><strong id="currentLabel">-</strong></div>
+          </div>
 
-        <div id="cellPicker" class="cell-picker" style="display: none;">
-          <div class="cell-picker-title">为 <strong id="pickerCoord">-</strong> 选择内容</div>
-          <div class="cell-picker-options" id="pickerOptions"></div>
-        </div>
+          <div class="board-wrap">
+            <div class="corner"></div>
+            <div class="cols" id="cols"></div>
+            <div class="rows" id="rows"></div>
+            <div class="board" id="board"></div>
+          </div>
 
-        <div class="legend">
-          <span><i class="swatch"></i>普通地板或物件格</span>
-          <span><i class="swatch kitchen"></i>厨房影响的半张地图</span>
-          <span><i class="swatch member"></i>家庭成员所在格</span>
-          <span><i class="swatch no"></i>你标记为无猫</span>
-          <span><i class="swatch" style="background:#e8f1ff;border-color:#bcd8f5"></i>选中猫的可能位置</span>
-        </div>
-      </section>
+          <div id="cellPicker" class="cell-picker">
+            <div class="cell-picker-title">为 <strong id="pickerCoord">-</strong> 选择内容</div>
+            <div class="cell-picker-options" id="pickerOptions"></div>
+          </div>
+
+          <div class="legend">
+            <span><i class="swatch"></i>普通地板或物件格</span>
+            <span><i class="swatch kitchen"></i>厨房影响的半张地图</span>
+            <span><i class="swatch member"></i>家庭成员所在格</span>
+            <span><i class="swatch no"></i>你标记为无猫</span>
+            <span><i class="swatch" style="background:#e8f1ff;border-color:#bcd8f5"></i>选中猫的可能位置</span>
+          </div>
+        </section>
+      </div>
 
       <aside class="side">
         <section class="card panel">
-          <h2>猫咪与线索</h2>
-          <div class="cat-picker" id="catPicker"><button class="cat-btn" type="button"><strong>🐈 雪球</strong><small>未标位置 · 可能 1 格</small><small class="clue">【雪球】喜欢柔软的地方。</small></button><button class="cat-btn" type="button"><strong>🐈 栗子</strong><small>未标位置 · 可能 1 格</small><small class="clue">【栗子】喜欢柔软的地方。</small></button><button class="cat-btn" type="button"><strong>🐈 小虎</strong><small>未标位置 · 可能 1 格</small><small class="clue">【小虎】喜欢柔软的地方。</small></button><button class="cat-btn" type="button"><strong>🐈 豆花</strong><small>未标位置 · 可能 2 格</small><small class="clue">【豆花】喜欢温暖的地方。</small></button><button class="cat-btn" type="button"><strong>🐈 布丁</strong><small>未标位置 · 可能 1 格</small><small class="clue">【布丁】喜欢柔软的地方。</small></button></div>
-        </section>
-
-        <section class="card panel">
           <h2>铲屎官手记</h2>
-          <ul class="hint-list" id="hintList"><li><span class="tag">冰箱</span>【雪球】昨天晚上又企图打开冰箱偷吃！</li><li><span class="tag">家人</span>【哥哥】不喜欢猫。</li><li><span class="tag">家人</span>【妹妹】不喜欢猫。</li><li><span class="tag">家人</span>【爷爷】喜欢猫。</li><li><span class="tag">厨房</span>【弟弟】正在厨房做焖鱼。</li><li><span class="tag">口味</span>【栗子】不喜欢鱼。</li><li><span class="tag">口味</span>【小虎】喜欢鱼。</li><li><span class="tag">口味</span>【豆花】喜欢鱼。</li><li><span class="tag">口味</span>【雪球】喜欢鱼。</li><li><span class="tag">关系</span>【小虎】和【布丁】一碰面就会打架。</li><li><span class="tag">关系</span>【布丁】和【豆花】一碰面就会打架。</li><li><span class="tag">属性</span>【雪球】不喜欢温暖的地方。</li><li><span class="tag">目击</span>铲屎官记得【豆花】在 F1 周围 3×3 范围内出没。</li><li><span class="tag">目击</span>铲屎官记得【栗子】在 B4 周围 3×3 范围内出没。</li><li><span class="tag">目击</span>铲屎官记得【布丁】在 E5 周围 3×3 范围内出没。</li><li><span class="tag">目击</span>铲屎官记得【小虎】在 D2 周围 3×3 范围内出没。</li><li><span class="tag">目击</span>铲屎官记得【雪球】在 D2 周围 3×3 范围内出没。</li><li><span class="tag">关系</span>【雪球】和【栗子】一碰面就会打架。</li><li><span class="tag">关系</span>【雪球】和【小虎】一碰面就会打架。</li><li><span class="tag">关系</span>【栗子】和【小虎】一碰面就会打架。</li><li><span class="tag">关系</span>【栗子】和【豆花】一碰面就会打架。</li><li><span class="tag">关系</span>【栗子】和【布丁】一碰面就会打架。</li></ul>
+          <ul class="hint-list" id="hintList"></ul>
         </section>
 
         <section class="card panel">
           <h2>推理过程</h2>
-          <div class="infer-panel" id="inferPanel">
-        <div class="infer-summary">
-          <span>当前合法解总数</span>
-          <span class="big">2</span>
-          <button class="infer-toggle" id="inferToggle">展开步骤</button>
-        </div>
-        <div class="infer-steps "><div class="infer-step"><span class="step-tag">步骤1</span><span class="step-cat">【雪球】</span>应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 36 格排除 35 格，剩 1 格。</div><div class="infer-step"><span class="step-tag">步骤2</span><span class="step-cat">【栗子】</span>应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 36 格排除 35 格，剩 1 格。</div><div class="infer-step"><span class="step-tag">步骤3</span><span class="step-cat">【小虎】</span>应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 36 格排除 32 格，剩 4 格。</div><div class="infer-step"><span class="step-tag">步骤4</span><span class="step-cat">【豆花】</span>应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 36 格排除 34 格，剩 2 格。</div><div class="infer-step"><span class="step-tag">步骤5</span><span class="step-cat">【布丁】</span>应用确定约束（家人态度/属性喜欢或不喜欢的位置约束/厨房口味/冰箱同行同列），从 36 格排除 31 格，剩 5 格。</div><div class="infer-step"><span class="step-tag">步骤6</span><span class="step-cat">【小虎】</span>与【布丁】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤7</span><span class="step-cat">【布丁】</span>与【豆花】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤8</span><span class="step-cat">【雪球】</span>与【栗子】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤9</span><span class="step-cat">【雪球】</span>与【小虎】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤10</span><span class="step-cat">【栗子】</span>与【小虎】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤11</span><span class="step-cat">【栗子】</span>与【豆花】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤12</span><span class="step-cat">【栗子】</span>与【布丁】一碰面就会打架，二者不能同行或同列。</div><div class="infer-step"><span class="step-tag">步骤13</span><span class="step-cat">【小虎】</span>结合“多只猫不同格”和猫之间的关系约束，继续排除 3 格，剩 1 格。</div><div class="infer-step"><span class="step-tag">步骤14</span><span class="step-cat">【布丁】</span>结合“多只猫不同格”和猫之间的关系约束，继续排除 4 格，剩 1 格。</div></div>
-      </div>
+          <div class="infer-panel" id="inferPanel"></div>
         </section>
 
         <section class="card panel">
           <h2>提交</h2>
-          <div id="message" class="message">新一轮已生成。先阅读硬性排除条件，再用同行同列线索缩小范围。</div>
+          <div id="message" class="message">点击房间格子，再选择这里有哪只猫或没有猫。猫可以和物件、家庭成员同格，但多只猫一定不同格。</div>
           <div class="actions">
             <button class="primary" id="catchBtn">捉猫</button>
             <button class="secondary" id="clearMarksBtn">清空标注</button>
@@ -2568,6 +1765,5 @@
 
     newGame();
   </script>
-
-
-<div data-trae-edit-ui="true"></div></body></html>
+</body>
+</html>
